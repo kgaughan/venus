@@ -1,5 +1,6 @@
 from glob import glob
-import os, sys
+import os, sys, shutil
+import anydbm
 
 if __name__ == '__main__':
     rootdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,8 +14,7 @@ def open():
         cache = config.cache_directory()
         index=os.path.join(cache,'index')
         if not os.path.exists(index): return None
-        import dbhash
-        return dbhash.open(filename(index, 'id'),'w')
+        return anydbm.open(filename(index, 'id'), 'w')
     except Exception, e:
         if e.__class__.__name__ == 'DBError': e = e.args[-1]
         from planet import logger as log
@@ -27,7 +27,7 @@ def destroy():
     if not os.path.exists(index): return None
     idindex = filename(index, 'id')
     if os.path.exists(idindex): os.unlink(idindex)
-    os.removedirs(index)
+    shutil.rmtree(index)
     log.info(idindex + " deleted")
 
 def create():
@@ -35,8 +35,7 @@ def create():
     cache = config.cache_directory()
     index=os.path.join(cache,'index')
     if not os.path.exists(index): os.makedirs(index)
-    import dbhash
-    index = dbhash.open(filename(index, 'id'),'c')
+    index = anydbm.open(filename(index, 'id'), 'c')
 
     try:
         import libxml2
