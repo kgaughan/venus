@@ -1,38 +1,42 @@
 from ConfigParser import ConfigParser
+import sys
+import urllib
+import urlparse
 
-inheritable_options = [ 'online_accounts' ]
+import rdflib
+from rdflib.namespace import DC, FOAF, RDF, RDFS
+
+from planet.config import downloadReadingList
+
+
+inheritable_options = ['online_accounts']
+
 
 def load_accounts(config, section):
     accounts = {}
-    if(config.has_option(section, 'online_accounts')):
+    if config.has_option(section, 'online_accounts'):
         values = config.get(section, 'online_accounts')
         for account_map in values.split('\n'):
             try:
-                homepage, map = account_map.split('|')
-                accounts[homepage] = map
+                homepage, mapping = account_map.split('|')
+                accounts[homepage] = mapping
             except:
                 pass
 
     return accounts
 
-def load_model(rdf, base_uri):
 
-    if hasattr(rdf, 'find_statements'):
+def load_graph(rdf, base_uri):
+    if isinstance(rdf, rdflib.Graph):
         return rdf
 
     if hasattr(rdf, 'read'):
         rdf = rdf.read()
 
-    def handler(code, level, facility, message, line, column, byte, file, uri):
-        pass
+    graph = rdflib.Graph()
+    graph.parse(data=rdf, publicID=base_uri)
+    return graph
 
-    from RDF import Model, Parser
-
-    model = Model()
-
-    Parser().parse_string_into_model(model,rdf,base_uri,handler)
-
-    return model
 
 # input = foaf, output = ConfigParser
 def foaf2config(rdf, config, subject=None, section=None):
@@ -41,12 +45,8 @@ def foaf2config(rdf, config, subject=None, section=None):
         return
 
     # there should be only be 1 section
-    if not section: section = config.sections().pop()
-
-    try:
-        from RDF import Model, NS, Parser, Statement
-    except:
-        return
+    if not section:
+        section = config.sections().pop()
 
     # account mappings, none by default
     # form: accounts = {url to service homepage (as found in FOAF)}|{URI template}\n*
@@ -55,97 +55,86 @@ def foaf2config(rdf, config, subject=None, section=None):
 
     depth = 0
 
-    if(config.has_option(section, 'depth')):
+    if config.has_option(section, 'depth'):
         depth = config.getint(section, 'depth')
 
-    model = load_model(rdf, section)
+    model = load_graph(rdf, section)
 
-    dc   = NS('http://purl.org/dc/elements/1.1/')
-    foaf = NS('http://xmlns.com/foaf/0.1/')
-    rdfs = NS('http://www.w3.org/2000/01/rdf-schema#')
-    rdf = NS('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-    rss = NS('http://purl.org/rss/1.0/')
+    rss = rdflib.Namespace('http://purl.org/rss/1.0/')
 
-    for statement in model.find_statements(Statement(subject,foaf.weblog,None)):
-
-        # feed owner
-        person = statement.subject
-
+    for person, _, value in model.triples((subject, FOAF.weblog, None)):
+        title = model.value(subject=person, predicate=FOAF.name)
         # title is required (at the moment)
-        title = model.get_target(person,foaf.name)
-        if not title: title = model.get_target(statement.object,dc.title)
-        if not title: 
+        if not title:
+            title = model.value(subject=person, predicate=DC.title)
+        if not title:
             continue
 
         # blog is optional
-        feed = model.get_target(statement.object,rdfs.seeAlso)
-        if feed and rss.channel == model.get_target(feed, rdf.type):
-            feed = str(feed.uri)
+        feed = model.value(subject=value, predicate=RDFS.seeAlso)
+        if feed and rss.channel == model.value(subject=feed,
+                                               predicate=RDF.type):
+            feed = str(feed)
             if not config.has_section(feed):
                 config.add_section(feed)
                 config.set(feed, 'name', str(title))
 
         # now look for OnlineAccounts for the same person
-        if accounts.keys():
-            for statement in model.find_statements(Statement(person,foaf.holdsAccount,None)):
-                rdfaccthome = model.get_target(statement.object,foaf.accountServiceHomepage)
-                rdfacctname = model.get_target(statement.object,foaf.accountName)
+        if len(accounts):
+            for acc in model.objects(person, FOAF.holdsAccount):
+                acc_home = model.value(subject=acc,
+                                       predicate=FOAF.accountServiceHomepage)
+                acc_name = model.value(subject=acc,
+                                       predicate=FOAF.accountName)
 
-                if not rdfaccthome or not rdfacctname: continue
-
-                if not rdfaccthome.is_resource() or not accounts.has_key(str(rdfaccthome.uri)): continue
-
-                if not rdfacctname.is_literal(): continue
-
-                rdfacctname = rdfacctname.literal_value['string']
-                rdfaccthome = str(rdfaccthome.uri)
+                if not acc_home or not acc_name:
+                    continue
+                acc_home = str(acc_home)
+                if acc_home not in accounts:
+                    continue
 
                 # shorten feed title a bit
                 try:
-                    servicetitle = rdfaccthome.replace('http://','').split('/')[0]
+                    service_title = urlparse.urlsplit(acc_home)[1]
                 except:
-                    servicetitle = rdfaccthome
+                    service_title = str(acc_home)
 
-                feed = accounts[rdfaccthome].replace("{foaf:accountName}", rdfacctname)
+                feed = accounts[acc_home].replace("{foaf:accountName}",
+                                                  acc_name)
                 if not config.has_section(feed):
                     config.add_section(feed)
-                    config.set(feed, 'name', "%s (%s)" % (title, servicetitle))
+                    config.set(feed, 'name', "%s (%s)" % (title,
+                                                          service_title))
 
         if depth > 0:
-
             # now the fun part, let's go after more friends
-            for statement in model.find_statements(Statement(person,foaf.knows,None)):
-                friend = statement.object
+            for friend in model.objects(person, FOAF.knows):
+                see_also = model.values(subject=friend, predicate=RDFS.seeAlso)
+                if not see_also:
+                    continue
 
-                # let's be safe
-                if friend.is_literal(): continue
-                
-                seeAlso = model.get_target(friend,rdfs.seeAlso)
-
-                # nothing to see
-                if not seeAlso or not seeAlso.is_resource(): continue
-
-                seeAlso = str(seeAlso.uri)
-
-                if not config.has_section(seeAlso):
-                    config.add_section(seeAlso)
-                    copy_options(config, section, seeAlso, 
-                            { 'content_type' : 'foaf', 
-                              'depth' : str(depth - 1) })
+                see_also = str(see_also)
+                if not config.has_section(see_also):
+                    config.add_section(see_also)
+                    copy_options(config, section, see_also,
+                                 {'content_type': 'foaf',
+                                  'depth': str(depth - 1)})
                 try:
-                    from planet.config import downloadReadingList
-                    downloadReadingList(seeAlso, config,
-                        lambda data, subconfig : friend2config(model, friend, seeAlso, subconfig, data), 
+                    downloadReadingList(see_also, config,
+                        lambda data, subconfig: friend2config(model, friend, see_also, subconfig, data),
                         False)
                 except:
                     pass
 
-    return
 
-def copy_options(config, parent_section, child_section, overrides = {}):
-    global inheritable_options
-    for option in [x for x in config.options(parent_section) if x in inheritable_options]:
-        if not overrides.has_key(option):
+def copy_options(config, parent_section, child_section, overrides=None):
+    if overrides is None:
+        overrides = {}
+
+    for option in config.options(parent_section):
+        if option not in inheritable_options:
+            continue
+        if option not in overrides:
             config.set(child_section, option, config.get(parent_section, option))
 
     for option, value in overrides.items():
@@ -153,40 +142,27 @@ def copy_options(config, parent_section, child_section, overrides = {}):
 
 
 def friend2config(friend_model, friend, seeAlso, subconfig, data):
+    model = load_graph(data, seeAlso)
 
-    try:
-        from RDF import Model, NS, Parser, Statement
-    except:
-        return
-
-    dc   = NS('http://purl.org/dc/elements/1.1/')
-    foaf = NS('http://xmlns.com/foaf/0.1/')
-    rdf = NS('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
-    rdfs = NS('http://www.w3.org/2000/01/rdf-schema#')
-
-    # FOAF InverseFunctionalProperties
-    ifps = [foaf.mbox, foaf.mbox_sha1sum, foaf.jabberID, foaf.aimChatID, 
-        foaf.icqChatID, foaf.yahooChatID, foaf.msnChatID, foaf.homepage, foaf.weblog]
-
-    model = load_model(data, seeAlso)
-
-    for statement in model.find_statements(Statement(None,rdf.type,foaf.Person)):
-
-        samefriend = statement.subject
-        
+    for same_friend in model.subjects(RDF.type, FOAF.Person):
         # maybe they have the same uri
-        if friend.is_resource() and samefriend.is_resource() and friend == samefriend:
-            foaf2config(model, subconfig, samefriend)
+        if friend == same_friend:
+            foaf2config(model, subconfig, same_friend)
             return
 
-        for ifp in ifps:
-            object = model.get_target(samefriend,ifp)
-            if object and object == friend_model.get_target(friend, ifp):
-                foaf2config(model, subconfig, samefriend)
+        # FOAF InverseFunctionalProperties
+        for ifp in [FOAF.mbox, FOAF.mbox_sha1sum,
+                    FOAF.jabberID, FOAF.aimChatID, FOAF.icqChatID,
+                    FOAF.yahooChatID, FOAF.msnChatID,
+                    FOAF.homepage, FOAF.weblog]:
+            prop = model.value(subject=same_friend, predicate=ifp)
+            if prop and prop == friend_model.value(subject=friend,
+                                                   predicate=ifp):
+                foaf2config(model, subconfig, same_friend)
                 return
 
+
 if __name__ == "__main__":
-    import sys, urllib
     config = ConfigParser()
 
     for uri in sys.argv[1:]:

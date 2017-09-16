@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
-import unittest, os, shutil
-from planet.foaf import foaf2config
 from ConfigParser import ConfigParser
+import os
+import shutil
+import unittest
+import xml.sax
+
+from planet.foaf import foaf2config
 from planet import config, logger
 
 workdir = 'tests/work/config/cache'
@@ -62,66 +66,61 @@ class FoafTest(unittest.TestCase):
         self.assertEqual('Danny Ayers', self.config.get(testfeed, 'name'))
 
     def test_no_foaf_name(self):
-        test = test_foaf_document.replace('foaf:name','foaf:title')
+        test = test_foaf_document.replace('foaf:name', 'foaf:title')
         foaf2config(test, self.config)
         self.assertEqual('Raw Blog by Danny Ayers',
-           self.config.get(testfeed, 'name'))
+                         self.config.get(testfeed, 'name'))
 
     def test_no_weblog(self):
-        test = test_foaf_document.replace('rdfs:seeAlso','rdfs:seealso')
+        test = test_foaf_document.replace('rdfs:seeAlso', 'rdfs:seealso')
         foaf2config(test, self.config)
         self.assertFalse(self.config.has_section(testfeed))
 
     def test_invalid_xml_before(self):
         test = '\n<?xml version="1.0" encoding="UTF-8"?>' + test_foaf_document
-        foaf2config(test, self.config)
-        self.assertFalse(self.config.has_section(testfeed))
+        try:
+            foaf2config(test, self.config)
+            self.fail("Document should not have parsed.")
+        except xml.sax.SAXParseException:
+            pass
 
     def test_invalid_xml_after(self):
         test = test_foaf_document.strip()[:-1]
-        foaf2config(test, self.config)
-        self.assertEqual('Danny Ayers', self.config.get(testfeed, 'name'))
+        try:
+            foaf2config(test, self.config)
+            self.fail("Document should not have parsed.")
+        except xml.sax.SAXParseException:
+            pass
 
     def test_online_accounts(self):
         config.load('tests/data/config/foaf.ini')
-        feeds = config.subscriptions()
-        feeds.sort()
-        self.assertEqual(['http://api.flickr.com/services/feeds/' +
-            'photos_public.gne?id=77366516@N00',
-            'http://del.icio.us/rss/eliast',
-            'http://torrez.us/feed/rdf'], feeds)
+        feeds = sorted(config.subscriptions())
+        self.assertEqual(['http://api.flickr.com/services/feeds/photos_public.gne?id=77366516@N00',
+                          'http://del.icio.us/rss/eliast',
+                          'http://torrez.us/feed/rdf'], feeds)
 
     def test_multiple_subscriptions(self):
         config.load('tests/data/config/foaf-multiple.ini')
-        self.assertEqual(2,len(config.reading_lists()))
-        feeds = config.subscriptions()
-        feeds.sort()
-        self.assertEqual(5,len(feeds))
-        self.assertEqual(['http://api.flickr.com/services/feeds/' +
-            'photos_public.gne?id=77366516@N00',
-            'http://api.flickr.com/services/feeds/' +
-            'photos_public.gne?id=SOMEID',
-            'http://del.icio.us/rss/SOMEID',
-            'http://del.icio.us/rss/eliast',
-            'http://torrez.us/feed/rdf'], feeds)
+        self.assertEqual(2, len(config.reading_lists()))
+        feeds = sorted(config.subscriptions())
+        self.assertEqual(5, len(feeds))
+        self.assertEqual(['http://api.flickr.com/services/feeds/photos_public.gne?id=77366516@N00',
+                          'http://api.flickr.com/services/feeds/photos_public.gne?id=SOMEID',
+                          'http://del.icio.us/rss/SOMEID',
+                          'http://del.icio.us/rss/eliast',
+                          'http://torrez.us/feed/rdf'], feeds)
 
     def test_recursive(self):
         config.load('tests/data/config/foaf-deep.ini')
-        feeds = config.subscriptions()
-        feeds.sort()
+        feeds = sorted(config.subscriptions())
         self.assertEqual(['http://api.flickr.com/services/feeds/photos_public.gne?id=77366516@N00',
-        'http://del.icio.us/rss/eliast', 'http://del.icio.us/rss/leef',
-        'http://del.icio.us/rss/rubys', 'http://intertwingly.net/blog/atom.xml',
-        'http://thefigtrees.net/lee/life/atom.xml',
-        'http://torrez.us/feed/rdf'], feeds)
+                          'http://del.icio.us/rss/eliast',
+                          'http://del.icio.us/rss/leef',
+                          'http://del.icio.us/rss/rubys',
+                          'http://intertwingly.net/blog/atom.xml',
+                          'http://thefigtrees.net/lee/life/atom.xml',
+                          'http://torrez.us/feed/rdf'], feeds)
 
-# these tests only make sense if libRDF is installed
-try:
-    import RDF
-except:
-    logger.warn("Redland RDF is not available => can't test FOAF reading lists")
-    for key in FoafTest.__dict__.keys():
-        if key.startswith('test_'): delattr(FoafTest, key)
 
 if __name__ == '__main__':
     unittest.main()
