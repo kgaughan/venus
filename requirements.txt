@@ -1,0 +1,7 @@
+feedparser
+genshi
+html5lib
+httplib2
+libxslt
+rdflib
+xmllib2
