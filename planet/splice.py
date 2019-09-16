@@ -15,19 +15,14 @@ def splice():
 
     log.info("Loading cached data")
     cache = config.cache_directory()
-    dir = [
-        (os.stat(file).st_mtime, file)
-        for file in glob.glob(cache + "/*")
-        if not os.path.isdir(file)
-    ]
-    dir.sort()
-    dir.reverse()
+    dir = sorted(
+        (file for file in glob.glob(cache + "/*") if not os.path.isdir(file)),
+        key=lambda file: os.stat(file).st_mtime,
+        reverse=True,
+    )
 
     max_items = max(
-        [
-            config.items_per_page(templ)
-            for templ in config.template_files() or ["Planet"]
-        ]
+        config.items_per_page(templ) for templ in config.template_files() or ["Planet"]
     )
 
     doc = minidom.parseString('<feed xmlns="http://www.w3.org/2005/Atom"/>')
@@ -108,7 +103,7 @@ def splice():
     count = {}
     atomNS = "http://www.w3.org/2005/Atom"
     new_feed_items = config.new_feed_items()
-    for mtime, file in dir:
+    for file in dir:
         if index != None:
             base = os.path.basename(file)
             if base in index and index[base] not in sub_ids:

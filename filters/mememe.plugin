@@ -408,10 +408,8 @@ while child:
         state = "inactive"
         if author in feed_links:
             ul2 = child.newChild(None, "ul", None)
-            feed_links[author].sort()
-            feed_links[author].reverse()
             link_count = 0
-            for mtime, entry, title in feed_links[author]:
+            for mtime, entry, title in sorted(feed_links[author], reverse=True):
                 if not title:
                     continue
                 li2 = ul2.newChild(None, "li", None)
@@ -458,8 +456,7 @@ for i in range(0, len(weighted_links)):
     if not novel:
         continue
 
-    all_links[link].sort()
-    all_links[link].reverse()
+    all_links[link] = sorted(all_links[link], reverse=True)
     cache_file = filename(cache, link)
     title = None
 

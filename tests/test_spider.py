@@ -57,8 +57,7 @@ class SpiderTest(unittest.TestCase):
         writeCache(feed_uri, feed_info, data)
 
     def verify_spiderFeed(self):
-        files = glob.glob(workdir + "/*")
-        files.sort()
+        files = sorted(glob.glob(workdir + "/*"))
 
         # verify that exactly four files + one sources dir were produced
         self.assertEqual(5, len(files))
@@ -199,8 +198,7 @@ class SpiderTest(unittest.TestCase):
 
             urllib.request.urlopen("http://127.0.0.1:%d/" % _PORT).read()
 
-        status = [int(rec[1]) for rec in log if str(rec[0]).startswith("GET ")]
-        status.sort()
+        status = sorted(int(rec[1]) for rec in log if str(rec[0]).startswith("GET "))
         self.assertEqual([200, 200, 200, 200, 404], status)
 
         self.verify_spiderPlanet()

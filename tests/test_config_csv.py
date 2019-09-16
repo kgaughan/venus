@@ -17,8 +17,7 @@ class ConfigCsvTest(unittest.TestCase):
     # administrivia
 
     def test_feeds(self):
-        feeds = config.subscriptions()
-        feeds.sort()
+        feeds = sorted(config.subscriptions())
         self.assertEqual(["feed1", "feed2"], feeds)
 
     def test_filters(self):

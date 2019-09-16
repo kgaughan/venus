@@ -24,16 +24,13 @@ def expungeCache():
 
     log.info("Listing cached entries")
     cache = config.cache_directory()
-    dir = [
-        (os.stat(file).st_mtime, file)
-        for file in glob.glob(cache + "/*")
-        if not os.path.isdir(file)
-    ]
-    dir.sort()
-    dir.reverse()
+    dir = sorted(
+        (file for file in glob.glob(cache + "/*") if not os.path.isdir(file)),
+        key=lambda file: os.stat(file).st_mtime,
+        reverse=True,
+    )
 
-    for mtime, file in dir:
-
+    for file in dir:
         try:
             entry = minidom.parse(file)
             # determine source of entry

@@ -25,8 +25,7 @@ class ThemesTest(unittest.TestCase):
         )
 
     def test_feeds(self):
-        feeds = config.subscriptions()
-        feeds.sort()
+        feeds = sorted(config.subscriptions())
         self.assertEqual(["feed1", "feed2"], feeds)
 
     # planet wide configuration

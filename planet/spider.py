@@ -272,10 +272,9 @@ def writeCache(feed_uri, feed_info, data):
 
     # identify inactive feeds
     if config.activity_threshold(feed_uri):
-        updated = [
+        updated = sorted(
             entry.updated_parsed for entry in data.entries if "updated_parsed" in entry
-        ]
-        updated.sort()
+        )
 
         if updated:
             data.feed["planet_updated"] = time.strftime(

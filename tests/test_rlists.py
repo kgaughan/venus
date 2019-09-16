@@ -20,8 +20,7 @@ class ReadingListTest(unittest.TestCase):
     # administrivia
 
     def test_feeds(self):
-        feeds = [split(feed)[1] for feed in config.subscriptions()]
-        feeds.sort()
+        feeds = sorted(split(feed)[1] for feed in config.subscriptions())
         self.assertEqual(
             ["testfeed0.atom", "testfeed1a.atom", "testfeed2.atom", "testfeed3.rss"],
             feeds,
@@ -46,8 +45,7 @@ class ReadingListTest(unittest.TestCase):
         parser = ConfigParser()
         parser.read(cache[0])
 
-        feeds = [split(feed)[1] for feed in parser.sections()]
-        feeds.sort()
+        feeds = sorted(split(feed)[1] for feed in parser.sections())
         self.assertEqual(
             [
                 "opml.xml",
