@@ -17,14 +17,15 @@ Notes:
 import sys, xml.dom.minidom, textwrap
 from xml.dom import Node, minidom
 
-atomNS = 'http://www.w3.org/2005/Atom'
-planetNS = 'http://planet.intertwingly.net/'
+atomNS = "http://www.w3.org/2005/Atom"
+planetNS = "http://planet.intertwingly.net/"
 
-args = dict(zip([name.lstrip('-') for name in sys.argv[1::2]], sys.argv[2::2]))
+args = dict(list(zip([name.lstrip("-") for name in sys.argv[1::2]], sys.argv[2::2])))
 
-wrapper = textwrap.TextWrapper(width=int(args.get('width','500')))
-omit = args.get('omit', '').split()
-target = args.get('target', 'planet:excerpt')
+wrapper = textwrap.TextWrapper(width=int(args.get("width", "500")))
+omit = args.get("omit", "").split()
+target = args.get("target", "planet:excerpt")
+
 
 class copy:
     """ recursively copy a source to a target, up to a given width """
@@ -40,18 +41,19 @@ class copy:
         """ copy child nodes of a source to the target """
         for child in source.childNodes:
             if child.nodeType == Node.ELEMENT_NODE:
-                 self.copyElement(child, target)
+                self.copyElement(child, target)
             elif child.nodeType == Node.TEXT_NODE:
-                 self.copyText(child.data, target)
-            if self.full: break
+                self.copyText(child.data, target)
+            if self.full:
+                break
 
     def copyElement(self, source, target):
         """ copy source element to the target """
 
         # check the omit list
         if source.nodeName in omit:
-            if source.nodeName == 'img':
-               return self.elideImage(source, target)
+            if source.nodeName == "img":
+                return self.elideImage(source, target)
             return self.copyChildren(source, target)
 
         # copy element, attributes, and children
@@ -64,14 +66,14 @@ class copy:
 
     def elideImage(self, source, target):
         """ copy an elided form of the image element to the target """
-        alt = source.getAttribute('alt') or '<img>'
-        src = source.getAttribute('src')
+        alt = source.getAttribute("alt") or "<img>"
+        src = source.getAttribute("src")
 
-        if target.nodeName == 'a' or not src:
+        if target.nodeName == "a" or not src:
             self.copyText(alt, target)
         else:
-            child = self.dom.createElement('a')
-            child.setAttribute('href', src)
+            child = self.dom.createElement("a")
+            child.setAttribute("href", src)
             self.copyText(alt, child)
             target.appendChild(child)
 
@@ -79,26 +81,28 @@ class copy:
         """ copy text to the target, until the point where it would wrap """
         if not source.isspace() and source.strip():
             self.text.append(source.strip())
-        lines = wrapper.wrap(' '.join(self.text))
+        lines = wrapper.wrap(" ".join(self.text))
         if len(lines) == 1:
             target.appendChild(self.dom.createTextNode(source))
             self.textlen = len(lines[0])
         elif lines:
-            excerpt = source[:len(lines[0])-self.textlen] + u' \u2026'
+            excerpt = source[: len(lines[0]) - self.textlen] + " \u2026"
             target.appendChild(dom.createTextNode(excerpt))
             self.full = True
 
+
 # select summary or content element
 dom = minidom.parse(sys.stdin)
-source = dom.getElementsByTagNameNS(atomNS, 'summary')
+source = dom.getElementsByTagNameNS(atomNS, "summary")
 if not source:
-    source = dom.getElementsByTagNameNS(atomNS, 'content')
+    source = dom.getElementsByTagNameNS(atomNS, "content")
 
 # if present, recursively copy it to a planet:excerpt element
 if source:
-    if target.startswith('planet:'):
-        dom.documentElement.setAttribute('xmlns:planet', planetNS)
-    if target.startswith('atom:'): target = target.split(':',1)[1]
+    if target.startswith("planet:"):
+        dom.documentElement.setAttribute("xmlns:planet", planetNS)
+    if target.startswith("atom:"):
+        target = target.split(":", 1)[1]
     excerpt = dom.createElementNS(planetNS, target)
     source[0].parentNode.appendChild(excerpt)
     copy(dom, source[0], excerpt)
@@ -106,4 +110,4 @@ if source:
         source[0].parentNode.removeChild(source[0])
 
 # print out results
-print dom.toxml('utf-8')
+print(dom.toxml("utf-8"))

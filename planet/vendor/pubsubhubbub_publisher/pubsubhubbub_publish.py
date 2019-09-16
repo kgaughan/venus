@@ -32,21 +32,21 @@ Set the 'http_proxy' environment variable on *nix or Windows to use an
 HTTP proxy.
 """
 
-__author__ = 'bslatkin@gmail.com (Brett Slatkin)'
+__author__ = "bslatkin@gmail.com (Brett Slatkin)"
 
-import urllib
-import urllib2
+import urllib.request, urllib.parse, urllib.error
+import urllib.request, urllib.error, urllib.parse
 
 
 class PublishError(Exception):
-  """An error occurred while trying to publish to the hub."""
+    """An error occurred while trying to publish to the hub."""
 
 
 URL_BATCH_SIZE = 100
 
 
 def publish(hub, *urls):
-  """Publishes an event to a hub.
+    """Publishes an event to a hub.
 
   Args:
     hub: The hub to publish the event to.
@@ -59,19 +59,20 @@ def publish(hub, *urls):
   Raises:
     PublishError if anything went wrong during publishing.
   """
-  if len(urls) == 1 and not isinstance(urls[0], basestring):
-    urls = list(urls[0])
+    if len(urls) == 1 and not isinstance(urls[0], str):
+        urls = list(urls[0])
 
-  for i in xrange(0, len(urls), URL_BATCH_SIZE):
-    chunk = urls[i:i+URL_BATCH_SIZE]
-    data = urllib.urlencode(
-        {'hub.url': chunk, 'hub.mode': 'publish'}, doseq=True)
-    try:
-      response = urllib2.urlopen(hub, data)
-    except (IOError, urllib2.HTTPError), e:
-      if hasattr(e, 'code') and e.code == 204:
-        continue
-      error = ''
-      if hasattr(e, 'read'):
-        error = e.read()
-      raise PublishError('%s, Response: "%s"' % (e, error))
+    for i in range(0, len(urls), URL_BATCH_SIZE):
+        chunk = urls[i : i + URL_BATCH_SIZE]
+        data = urllib.parse.urlencode(
+            {"hub.url": chunk, "hub.mode": "publish"}, doseq=True
+        )
+        try:
+            response = urllib.request.urlopen(hub, data)
+        except (IOError, urllib.error.HTTPError) as e:
+            if hasattr(e, "code") and e.code == 204:
+                continue
+            error = ""
+            if hasattr(e, "read"):
+                error = e.read()
+            raise PublishError('%s, Response: "%s"' % (e, error))

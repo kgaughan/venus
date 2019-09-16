@@ -1,4 +1,3 @@
-
 """ A templating engine for separation of code and HTML.
 
     The documentation of this templating engine is separated to two parts:
@@ -37,12 +36,12 @@ from types import *
 import re
 import os
 import os.path
-import pprint       # only for debugging
+import pprint  # only for debugging
 import sys
 import copy
-import cgi          # for HTML escaping of variables
-import urllib       # for URL escaping of variables
-import cPickle      # for template compilation
+import cgi  # for HTML escaping of variables
+import urllib.request, urllib.parse, urllib.error  # for URL escaping of variables
+import pickle  # for template compilation
 import gettext
 import portalocker  # for locking
 
@@ -62,6 +61,7 @@ PARAM_GETTEXT_STRING = 1
 #          CLASS: TemplateManager            #
 ##############################################
 
+
 class TemplateManager:
     """  Class that manages compilation and precompilation of templates.
     
@@ -72,8 +72,9 @@ class TemplateManager:
          comparisons. 
     """
 
-    def __init__(self, include=1, max_include=5, precompile=1, comments=1,
-                 gettext=0, debug=0):
+    def __init__(
+        self, include=1, max_include=5, precompile=1, comments=1, gettext=0, debug=0
+    ):
         """ Constructor.
         
             @header
@@ -170,15 +171,21 @@ class TemplateManager:
             if self.is_precompiled(file):
                 try:
                     precompiled = self.load_precompiled(file)
-                except PrecompiledError, template:
-                    print >> sys.stderr, "Htmltmpl: bad precompiled "\
-                                         "template '%s' removed" % template
+                except PrecompiledError as template:
+                    print(
+                        "Htmltmpl: bad precompiled " "template '%s' removed" % template,
+                        file=sys.stderr,
+                    )
                     compiled = self.compile(file)
                     self.save_precompiled(compiled)
                 else:
                     precompiled.debug(self._debug)
-                    compile_params = (self._include, self._max_include,
-                                      self._comments, self._gettext)
+                    compile_params = (
+                        self._include,
+                        self._max_include,
+                        self._comments,
+                        self._gettext,
+                    )
                     if precompiled.is_uptodate(compile_params):
                         self.DEB("PRECOMPILED: UPTODATE")
                         compiled = precompiled
@@ -193,7 +200,7 @@ class TemplateManager:
             self.DEB("PRECOMPILATION DISABLED")
             compiled = self.compile(file)
         return compiled
-    
+
     def update(self, template):
         """ Update (recompile) a compiled template.
         
@@ -220,34 +227,35 @@ class TemplateManager:
 
     ##############################################
     #              PRIVATE METHODS               #
-    ##############################################    
+    ##############################################
 
     def DEB(self, str):
         """ Print debugging message to stderr if debugging is enabled. 
             @hidden
         """
-        if self._debug: print >> sys.stderr, str
+        if self._debug:
+            print(str, file=sys.stderr)
 
     def compile(self, file):
         """ Compile the template.
             @hidden
         """
-        return TemplateCompiler(self._include, self._max_include,
-                                self._comments, self._gettext,
-                                self._debug).compile(file)
-    
+        return TemplateCompiler(
+            self._include, self._max_include, self._comments, self._gettext, self._debug
+        ).compile(file)
+
     def is_precompiled(self, file):
         """ Return true if the template is already precompiled on the disk.
             This method doesn't check whether the compiled template is
             uptodate.
             @hidden
         """
-        filename = file + "c"   # "template.tmplc"
+        filename = file + "c"  # "template.tmplc"
         if os.path.isfile(filename):
             return 1
         else:
             return 0
-        
+
     def load_precompiled(self, file):
         """ Load precompiled template from disk.
 
@@ -256,7 +264,7 @@ class TemplateManager:
             
             @hidden
         """
-        filename = file + "c"   # "template.tmplc"
+        filename = file + "c"  # "template.tmplc"
         self.DEB("LOADING PRECOMPILED")
         try:
             remove_bad = 0
@@ -264,14 +272,16 @@ class TemplateManager:
             try:
                 file = open(filename, "rb")
                 portalocker.lock(file, portalocker.LOCK_SH)
-                precompiled = cPickle.load(file)
-            except IOError, (errno, errstr):
-                raise TemplateError, "IO error in load precompiled "\
-                                     "template '%s': (%d) %s"\
-                                     % (filename, errno, errstr)
-            except cPickle.UnpicklingError:
+                precompiled = pickle.load(file)
+            except IOError as xxx_todo_changeme:
+                (errno, errstr) = xxx_todo_changeme.args
+                raise TemplateError(
+                    "IO error in load precompiled "
+                    "template '%s': (%d) %s" % (filename, errno, errstr)
+                )
+            except pickle.UnpicklingError:
                 remove_bad = 1
-                raise PrecompiledError, filename
+                raise PrecompiledError(filename)
             except:
                 remove_bad = 1
                 raise
@@ -284,7 +294,7 @@ class TemplateManager:
             if remove_bad and os.path.isfile(filename):
                 # X: We may lose the original exception here, raising OSError.
                 os.remove(filename)
-                
+
     def save_precompiled(self, template):
         """ Save compiled template to disk in precompiled form.
             
@@ -298,35 +308,39 @@ class TemplateManager:
             
             @hidden
         """
-        filename = template.file() + "c"   # creates "template.tmplc"
+        filename = template.file() + "c"  # creates "template.tmplc"
         # Check if we have write permission to the template's directory.
         template_dir = os.path.dirname(os.path.abspath(filename))
         if not os.access(template_dir, os.W_OK):
-            raise TemplateError, "Cannot save precompiled templates "\
-                                 "to '%s': write permission denied."\
-                                 % template_dir
+            raise TemplateError(
+                "Cannot save precompiled templates "
+                "to '%s': write permission denied." % template_dir
+            )
         try:
             remove_bad = 0
             file = None
             try:
-                file = open(filename, "wb")   # may truncate existing file
+                file = open(filename, "wb")  # may truncate existing file
                 portalocker.lock(file, portalocker.LOCK_EX)
                 BINARY = 1
                 READABLE = 0
                 if self._debug:
-                    cPickle.dump(template, file, READABLE)
+                    pickle.dump(template, file, READABLE)
                 else:
-                    cPickle.dump(template, file, BINARY)
-            except IOError, (errno, errstr):
+                    pickle.dump(template, file, BINARY)
+            except IOError as xxx_todo_changeme1:
+                (errno, errstr) = xxx_todo_changeme1.args
                 remove_bad = 1
-                raise TemplateError, "IO error while saving precompiled "\
-                                     "template '%s': (%d) %s"\
-                                      % (filename, errno, errstr)
-            except cPickle.PicklingError, error:
+                raise TemplateError(
+                    "IO error while saving precompiled "
+                    "template '%s': (%d) %s" % (filename, errno, errstr)
+                )
+            except pickle.PicklingError as error:
                 remove_bad = 1
-                raise TemplateError, "Pickling error while saving "\
-                                     "precompiled template '%s': %s"\
-                                     % (filename, error)
+                raise TemplateError(
+                    "Pickling error while saving "
+                    "precompiled template '%s': %s" % (filename, error)
+                )
             except:
                 remove_bad = 1
                 raise
@@ -344,6 +358,7 @@ class TemplateManager:
 ##############################################
 #          CLASS: TemplateProcessor          #
 ##############################################
+
 
 class TemplateProcessor:
     """ Fill the template with data and process it.
@@ -389,13 +404,13 @@ class TemplateProcessor:
         self._html_escape = html_escape
         self._magic_vars = magic_vars
         self._global_vars = global_vars
-        self._debug = debug        
+        self._debug = debug
 
         # Data structure containing variables and loops set by the
         # application. Use debug=1, process some template and
         # then check stderr to see how the structure looks.
         # It's modified only by set() and reset() methods.
-        self._vars = {}        
+        self._vars = {}
 
         # Following variables are for multipart templates.
         self._current_part = 1
@@ -431,17 +446,19 @@ class TemplateProcessor:
         if self.is_ordinary_var(value):
             # template top-level ordinary variable
             if not var.islower():
-                raise TemplateError, "Invalid variable name '%s'." % var
+                raise TemplateError("Invalid variable name '%s'." % var)
         elif type(value) == ListType:
             # template top-level loop
             if var != var.capitalize():
-                raise TemplateError, "Invalid loop name '%s'." % var
+                raise TemplateError("Invalid loop name '%s'." % var)
         else:
-            raise TemplateError, "Value of toplevel variable '%s' must "\
-                                 "be either a scalar or a list." % var
+            raise TemplateError(
+                "Value of toplevel variable '%s' must "
+                "be either a scalar or a list." % var
+            )
         self._vars[var] = value
         self.DEB("VALUE SET: " + str(var))
-        
+
     def reset(self, keep_data=0):
         """ Reset the template data.
 
@@ -491,74 +508,78 @@ class TemplateProcessor:
             is processed, or all remaining parts are processed.
         """
         self.DEB("APP INPUT:")
-        if self._debug: pprint.pprint(self._vars, sys.stderr)
+        if self._debug:
+            pprint.pprint(self._vars, sys.stderr)
         if part != None and (part == 0 or part < self._current_part):
-            raise TemplateError, "process() - invalid part number"
+            raise TemplateError("process() - invalid part number")
 
         # This flag means "jump behind the end of current statement" or
         # "skip the parameters of current statement".
         # Even parameters that actually are not present in the template
         # do appear in the list of tokens as empty items !
-        skip_params = 0 
+        skip_params = 0
 
         # Stack for enabling or disabling output in response to TMPL_IF,
         # TMPL_UNLESS, TMPL_ELSE and TMPL_LOOPs with no passes.
         output_control = []
         ENABLE_OUTPUT = 1
         DISABLE_OUTPUT = 0
-        
+
         # Stacks for data related to loops.
-        loop_name = []        # name of a loop
-        loop_pass = []        # current pass of a loop (counted from zero)
-        loop_start = []       # index of loop start in token list
-        loop_total = []       # total number of passes in a loop
-        
+        loop_name = []  # name of a loop
+        loop_pass = []  # current pass of a loop (counted from zero)
+        loop_start = []  # index of loop start in token list
+        loop_total = []  # total number of passes in a loop
+
         tokens = template.tokens()
         len_tokens = len(tokens)
-        out = ""              # buffer for processed output
+        out = ""  # buffer for processed output
 
         # Recover position at which we ended after processing of last part.
         i = self._current_pos
-            
+
         # Process the list of tokens.
         while 1:
-            if i == len_tokens: break            
-            if skip_params:   
+            if i == len_tokens:
+                break
+            if skip_params:
                 # Skip the parameters following a statement.
                 skip_params = 0
                 i += PARAMS_NUMBER
                 continue
 
             token = tokens[i]
-            if token.startswith("<TMPL_") or \
-               token.startswith("</TMPL_"):
+            if token.startswith("<TMPL_") or token.startswith("</TMPL_"):
                 if token == "<TMPL_VAR":
                     # TMPL_VARs should be first. They are the most common.
                     var = tokens[i + PARAM_NAME]
                     if not var:
-                        raise TemplateError, "No identifier in <TMPL_VAR>."
+                        raise TemplateError("No identifier in <TMPL_VAR>.")
                     escape = tokens[i + PARAM_ESCAPE]
                     globalp = tokens[i + PARAM_GLOBAL]
                     skip_params = 1
-                    
+
                     # If output of current block is not disabled then append
                     # the substitued and escaped variable to the output.
                     if DISABLE_OUTPUT not in output_control:
-                        value = str(self.find_value(var, loop_name, loop_pass,
-                                                    loop_total, globalp))
+                        value = str(
+                            self.find_value(
+                                var, loop_name, loop_pass, loop_total, globalp
+                            )
+                        )
                         out += self.escape(value, escape)
                         self.DEB("VAR: " + str(var))
 
                 elif token == "<TMPL_LOOP":
                     var = tokens[i + PARAM_NAME]
                     if not var:
-                        raise TemplateError, "No identifier in <TMPL_LOOP>."
+                        raise TemplateError("No identifier in <TMPL_LOOP>.")
                     skip_params = 1
 
                     # Find total number of passes in this loop.
-                    passtotal = self.find_value(var, loop_name, loop_pass,
-                                                loop_total)
-                    if not passtotal: passtotal = 0
+                    passtotal = self.find_value(var, loop_name, loop_pass, loop_total)
+                    if not passtotal:
+                        passtotal = 0
                     # Push data for this loop on the stack.
                     loop_total.append(passtotal)
                     loop_start.append(i)
@@ -573,45 +594,43 @@ class TemplateProcessor:
                         self.DEB("LOOP: DISABLE: " + str(var))
                     else:
                         output_control.append(ENABLE_OUTPUT)
-                        self.DEB("LOOP: FIRST PASS: %s TOTAL: %d"\
-                                 % (var, passtotal))
+                        self.DEB("LOOP: FIRST PASS: %s TOTAL: %d" % (var, passtotal))
 
                 elif token == "<TMPL_IF":
                     var = tokens[i + PARAM_NAME]
                     if not var:
-                        raise TemplateError, "No identifier in <TMPL_IF>."
+                        raise TemplateError("No identifier in <TMPL_IF>.")
                     globalp = tokens[i + PARAM_GLOBAL]
                     skip_params = 1
-                    if self.find_value(var, loop_name, loop_pass,
-                                       loop_total, globalp):
+                    if self.find_value(var, loop_name, loop_pass, loop_total, globalp):
                         output_control.append(ENABLE_OUTPUT)
                         self.DEB("IF: ENABLE: " + str(var))
                     else:
                         output_control.append(DISABLE_OUTPUT)
                         self.DEB("IF: DISABLE: " + str(var))
-     
+
                 elif token == "<TMPL_UNLESS":
                     var = tokens[i + PARAM_NAME]
                     if not var:
-                        raise TemplateError, "No identifier in <TMPL_UNLESS>."
+                        raise TemplateError("No identifier in <TMPL_UNLESS>.")
                     globalp = tokens[i + PARAM_GLOBAL]
                     skip_params = 1
-                    if self.find_value(var, loop_name, loop_pass,
-                                      loop_total, globalp):
+                    if self.find_value(var, loop_name, loop_pass, loop_total, globalp):
                         output_control.append(DISABLE_OUTPUT)
                         self.DEB("UNLESS: DISABLE: " + str(var))
                     else:
                         output_control.append(ENABLE_OUTPUT)
                         self.DEB("UNLESS: ENABLE: " + str(var))
-     
+
                 elif token == "</TMPL_LOOP":
                     skip_params = 1
                     if not loop_name:
-                        raise TemplateError, "Unmatched </TMPL_LOOP>."
-                    
+                        raise TemplateError("Unmatched </TMPL_LOOP>.")
+
                     # If this loop was not disabled, then record the pass.
-                    if loop_total[-1] > 0: loop_pass[-1] += 1
-                    
+                    if loop_total[-1] > 0:
+                        loop_pass[-1] += 1
+
                     if loop_pass[-1] == loop_total[-1]:
                         # There are no more passes in this loop. Pop
                         # the loop from stack.
@@ -622,29 +641,29 @@ class TemplateProcessor:
                         output_control.pop()
                         self.DEB("LOOP: END")
                     else:
-                        # Jump to the beggining of this loop block 
+                        # Jump to the beggining of this loop block
                         # to process next pass of the loop.
                         i = loop_start[-1]
                         self.DEB("LOOP: NEXT PASS")
-     
+
                 elif token == "</TMPL_IF":
                     skip_params = 1
                     if not output_control:
-                        raise TemplateError, "Unmatched </TMPL_IF>."
+                        raise TemplateError("Unmatched </TMPL_IF>.")
                     output_control.pop()
                     self.DEB("IF: END")
-     
+
                 elif token == "</TMPL_UNLESS":
                     skip_params = 1
                     if not output_control:
-                        raise TemplateError, "Unmatched </TMPL_UNLESS>."
+                        raise TemplateError("Unmatched </TMPL_UNLESS>.")
                     output_control.pop()
                     self.DEB("UNLESS: END")
-     
+
                 elif token == "<TMPL_ELSE":
                     skip_params = 1
                     if not output_control:
-                        raise TemplateError, "Unmatched <TMPL_ELSE>."
+                        raise TemplateError("Unmatched <TMPL_ELSE>.")
                     if output_control[-1] == DISABLE_OUTPUT:
                         # Condition was false, activate the ELSE block.
                         output_control[-1] = ENABLE_OUTPUT
@@ -654,7 +673,7 @@ class TemplateProcessor:
                         output_control[-1] = DISABLE_OUTPUT
                         self.DEB("ELSE: DISABLE")
                     else:
-                        raise TemplateError, "BUG: ELSE: INVALID FLAG"
+                        raise TemplateError("BUG: ELSE: INVALID FLAG")
 
                 elif token == "<TMPL_BOUNDARY":
                     if part and part == self._current_part:
@@ -672,14 +691,17 @@ class TemplateProcessor:
                     # when it was not replaced by the parser.
                     skip_params = 1
                     filename = tokens[i + PARAM_NAME]
-                    out += """
+                    out += (
+                        """
                         <br />
                         <p>
                         <strong>HTMLTMPL WARNING:</strong><br />
                         Cannot include template: <strong>%s</strong>
                         </p>
                         <br />
-                    """ % filename
+                    """
+                        % filename
+                    )
                     self.DEB("CANNOT INCLUDE WARNING")
 
                 elif token == "<TMPL_GETTEXT":
@@ -688,23 +710,25 @@ class TemplateProcessor:
                         text = tokens[i + PARAM_GETTEXT_STRING]
                         out += gettext.gettext(text)
                         self.DEB("GETTEXT: " + text)
-                    
+
                 else:
                     # Unknown processing directive.
-                    raise TemplateError, "Invalid statement %s>." % token
-                     
+                    raise TemplateError("Invalid statement %s>." % token)
+
             elif DISABLE_OUTPUT not in output_control:
                 # Raw textual template data.
-                # If output of current block is not disabled, then 
+                # If output of current block is not disabled, then
                 # append template data to the output buffer.
                 out += token
-                
+
             i += 1
             # end of the big while loop
-        
+
         # Check whether all opening statements were closed.
-        if loop_name: raise TemplateError, "Missing </TMPL_LOOP>."
-        if output_control: raise TemplateError, "Missing </TMPL_IF> or </TMPL_UNLESS>"
+        if loop_name:
+            raise TemplateError("Missing </TMPL_LOOP>.")
+        if output_control:
+            raise TemplateError("Missing </TMPL_IF> or </TMPL_UNLESS>")
         return out
 
     ##############################################
@@ -715,10 +739,10 @@ class TemplateProcessor:
         """ Print debugging message to stderr if debugging is enabled.
             @hidden
         """
-        if self._debug: print >> sys.stderr, str
+        if self._debug:
+            print(str, file=sys.stderr)
 
-    def find_value(self, var, loop_name, loop_pass, loop_total,
-                   global_override=None):
+    def find_value(self, var, loop_name, loop_pass, loop_total, global_override=None):
         """ Search the self._vars data structure to find variable var
             located in currently processed pass of a loop which
             is currently being processed. If the variable is an ordinary
@@ -737,25 +761,30 @@ class TemplateProcessor:
         # of the variable starts with "__" and if we are inside a loop.
         if self._magic_vars and var.startswith("__") and loop_name:
             return self.magic_var(var, loop_pass[-1], loop_total[-1])
-                    
+
         # Search for an ordinary variable or for a loop.
         # Recursively search in self._vars for the requested variable.
         scope = self._vars
         globals = []
-        for i in range(len(loop_name)):            
+        for i in range(len(loop_name)):
             # If global lookup is on then push the value on the stack.
-            if ((self._global_vars and global_override != "0") or \
-                 global_override == "1") and scope.has_key(var) and \
-               self.is_ordinary_var(scope[var]):
+            if (
+                (
+                    (self._global_vars and global_override != "0")
+                    or global_override == "1"
+                )
+                and var in scope
+                and self.is_ordinary_var(scope[var])
+            ):
                 globals.append(scope[var])
-            
+
             # Descent deeper into the hierarchy.
-            if scope.has_key(loop_name[i]) and scope[loop_name[i]]:
+            if loop_name[i] in scope and scope[loop_name[i]]:
                 scope = scope[loop_name[i]][loop_pass[i]]
             else:
                 return ""
-            
-        if scope.has_key(var):
+
+        if var in scope:
             # Value exists in current loop.
             if type(scope[var]) == ListType:
                 # The requested value is a loop.
@@ -763,9 +792,9 @@ class TemplateProcessor:
                 return len(scope[var])
             else:
                 return scope[var]
-        elif globals and \
-             ((self._global_vars and global_override != "0") or \
-               global_override == "1"):
+        elif globals and (
+            (self._global_vars and global_override != "0") or global_override == "1"
+        ):
             # Return globally looked up value.
             return globals.pop()
         else:
@@ -784,8 +813,7 @@ class TemplateProcessor:
 
             @hidden
         """
-        self.DEB("MAGIC: '%s', PASS: %d, TOTAL: %d"\
-                 % (var, loop_pass, loop_total))
+        self.DEB("MAGIC: '%s', PASS: %d, TOTAL: %d" % (var, loop_pass, loop_total))
         if var == "__FIRST__":
             if loop_pass == 0:
                 return 1
@@ -801,7 +829,7 @@ class TemplateProcessor:
             if loop_pass != 0 and loop_pass != loop_total - 1:
                 return 1
             else:
-                return 0        
+                return 0
         elif var == "__PASS__":
             # Magic variable __PASS__ counts passes from one.
             return loop_pass + 1
@@ -821,14 +849,16 @@ class TemplateProcessor:
             if loop_pass != 0 and loop_pass != loop_total - 1:
                 # Check if an integer follows the variable name.
                 try:
-                    every = int(var[9:])   # nine is length of "__EVERY__"
+                    every = int(var[9:])  # nine is length of "__EVERY__"
                 except ValueError:
-                    raise TemplateError, "Magic variable __EVERY__x: "\
-                                         "Invalid pass number."
+                    raise TemplateError(
+                        "Magic variable __EVERY__x: " "Invalid pass number."
+                    )
                 else:
                     if not every:
-                        raise TemplateError, "Magic variable __EVERY__x: "\
-                                             "Pass number cannot be zero."
+                        raise TemplateError(
+                            "Magic variable __EVERY__x: " "Pass number cannot be zero."
+                        )
                     elif (loop_pass + 1) % every == 0:
                         self.DEB("MAGIC: EVERY: " + str(every))
                         return 1
@@ -837,18 +867,26 @@ class TemplateProcessor:
             else:
                 return 0
         else:
-            raise TemplateError, "Invalid magic variable '%s'." % var
+            raise TemplateError("Invalid magic variable '%s'." % var)
 
     def escape(self, str, override=""):
         """ Escape a string either by HTML escaping or by URL escaping.
             @hidden
         """
         ESCAPE_QUOTES = 1
-        if (self._html_escape and override != "NONE" and override != "0" and \
-            override != "URL") or override == "HTML" or override == "1":
+        if (
+            (
+                self._html_escape
+                and override != "NONE"
+                and override != "0"
+                and override != "URL"
+            )
+            or override == "HTML"
+            or override == "1"
+        ):
             return cgi.escape(str, ESCAPE_QUOTES)
         elif override == "URL":
-            return urllib.quote_plus(str)
+            return urllib.parse.quote_plus(str)
         else:
             return str
 
@@ -856,8 +894,12 @@ class TemplateProcessor:
         """ Return true if var is a scalar. (not a reference to loop)
             @hidden
         """
-        if type(var) == StringType or type(var) == IntType or \
-           type(var) == LongType or type(var) == FloatType:
+        if (
+            type(var) == StringType
+            or type(var) == IntType
+            or type(var) == LongType
+            or type(var) == FloatType
+        ):
             return 1
         else:
             return 0
@@ -866,6 +908,7 @@ class TemplateProcessor:
 ##############################################
 #          CLASS: TemplateCompiler           #
 ##############################################
+
 
 class TemplateCompiler:
     """ Preprocess, parse, tokenize and compile the template.
@@ -882,8 +925,7 @@ class TemplateCompiler:
         compiled template to disk in a precompiled form.
     """
 
-    def __init__(self, include=1, max_include=5, comments=1, gettext=0,
-                 debug=0):
+    def __init__(self, include=1, max_include=5, comments=1, gettext=0, debug=0):
         """ Constructor.
 
         @header __init__(include=1, max_include=5, comments=1, gettext=0,
@@ -895,13 +937,13 @@ class TemplateCompiler:
         @param gettext Enable or disable gettext support.
         @param debug Enable or disable debugging messages.
         """
-        
+
         self._include = include
         self._max_include = max_include
         self._comments = comments
         self._gettext = gettext
         self._debug = debug
-        
+
         # This is a list of filenames of all included templates.
         # It's modified by the include_templates() method.
         self._include_files = []
@@ -909,7 +951,7 @@ class TemplateCompiler:
         # This is a counter of current inclusion depth. It's used to prevent
         # infinite recursive includes.
         self._include_level = 0
-    
+
     def compile(self, file):
         """ Compile template from a file.
 
@@ -922,14 +964,19 @@ class TemplateCompiler:
             See the <em>prepare()</em> method of the <em>TemplateManager</em>
             class for exaplanation of this parameter.
         """
-        
+
         self.DEB("COMPILING FROM FILE: " + file)
         self._include_path = os.path.join(os.path.dirname(file), INCLUDE_DIR)
         tokens = self.parse(self.read(file))
-        compile_params = (self._include, self._max_include, self._comments,
-                          self._gettext)
-        return Template(__version__, file, self._include_files,
-                        tokens, compile_params, self._debug)
+        compile_params = (
+            self._include,
+            self._max_include,
+            self._comments,
+            self._gettext,
+        )
+        return Template(
+            __version__, file, self._include_files, tokens, compile_params, self._debug
+        )
 
     def compile_string(self, data):
         """ Compile template from a string.
@@ -948,21 +995,25 @@ class TemplateCompiler:
         self.DEB("COMPILING FROM STRING")
         self._include = 0
         tokens = self.parse(data)
-        compile_params = (self._include, self._max_include, self._comments,
-                          self._gettext)
-        return Template(__version__, None, None, tokens, compile_params,
-                        self._debug)
+        compile_params = (
+            self._include,
+            self._max_include,
+            self._comments,
+            self._gettext,
+        )
+        return Template(__version__, None, None, tokens, compile_params, self._debug)
 
     ##############################################
     #              PRIVATE METHODS               #
     ##############################################
-                
+
     def DEB(self, str):
         """ Print debugging message to stderr if debugging is enabled.
             @hidden
         """
-        if self._debug: print >> sys.stderr, str
-    
+        if self._debug:
+            print(str, file=sys.stderr)
+
     def read(self, filename):
         """ Read content of file and return it. Raise an error if a problem
             occurs.
@@ -974,14 +1025,18 @@ class TemplateCompiler:
             try:
                 f = open(filename, "r")
                 data = f.read()
-            except IOError, (errno, errstr):
-                raise TemplateError, "IO error while reading template '%s': "\
-                                     "(%d) %s" % (filename, errno, errstr)
+            except IOError as xxx_todo_changeme2:
+                (errno, errstr) = xxx_todo_changeme2.args
+                raise TemplateError(
+                    "IO error while reading template '%s': "
+                    "(%d) %s" % (filename, errno, errstr)
+                )
             else:
                 return data
         finally:
-            if f: f.close()
-               
+            if f:
+                f.close()
+
     def parse(self, template_data):
         """ Parse the template. This method is recursively called from
             within the include_templates() method.
@@ -1004,7 +1059,7 @@ class TemplateCompiler:
         """
         pattern = r"### .*"
         return re.sub(pattern, "", template_data)
-           
+
     def include_templates(self, tokens):
         """ Process TMPL_INCLUDE statements. Use the include_level counter
             to prevent infinite recursion. Record paths to all included
@@ -1012,12 +1067,13 @@ class TemplateCompiler:
             @hidden
         """
         i = 0
-        out = ""    # buffer for output
+        out = ""  # buffer for output
         skip_params = 0
-        
+
         # Process the list of tokens.
         while 1:
-            if i == len(tokens): break
+            if i == len(tokens):
+                break
             if skip_params:
                 skip_params = 0
                 i += PARAMS_NUMBER
@@ -1027,7 +1083,7 @@ class TemplateCompiler:
             if token == "<TMPL_INCLUDE":
                 filename = tokens[i + PARAM_NAME]
                 if not filename:
-                    raise TemplateError, "No filename in <TMPL_INCLUDE>."
+                    raise TemplateError("No filename in <TMPL_INCLUDE>.")
                 self._include_level += 1
                 if self._include_level > self._max_include:
                     # Do not include the template.
@@ -1045,16 +1101,17 @@ class TemplateCompiler:
                     # Append the tokens from the included template to actual
                     # position in the tokens list, replacing the TMPL_INCLUDE
                     # token and its parameters.
-                    tokens[i:i+PARAMS_NUMBER+1] = include_tokens
+                    tokens[i : i + PARAMS_NUMBER + 1] = include_tokens
                     i = i + len(include_tokens)
                     self.DEB("INCLUDED: " + filename)
-                    continue   # Do not increment 'i' below.
+                    continue  # Do not increment 'i' below.
             i += 1
             # end of the main while loop
 
-        if self._include_level > 0: self._include_level -= 1
+        if self._include_level > 0:
+            self._include_level -= 1
         return out
-    
+
     def tokenize(self, template_data):
         """ Split the template into tokens separated by template statements.
             The statements itself and associated parameters are also
@@ -1066,7 +1123,8 @@ class TemplateCompiler:
         self.DEB("TOKENIZING TEMPLATE")
         # NOTE: The TWO double quotes in character class in the regexp below
         # are there only to prevent confusion of syntax highlighter in Emacs.
-        pattern = r"""
+        pattern = (
+            r"""
             (?:^[ \t]+)?               # eat spaces, tabs (opt.)
             (<
              (?:!--[ ])?               # comment start + space (opt.)
@@ -1074,15 +1132,19 @@ class TemplateCompiler:
              [ a-zA-Z0-9""/.=:_\\-]*   # this spans also comments ending (--)
              >)
             [%s]?                      # eat trailing newline (opt.)
-        """ % os.linesep
+        """
+            % os.linesep
+        )
         rc = re.compile(pattern, re.VERBOSE | re.MULTILINE)
         split = rc.split(template_data)
         tokens = []
         for statement in split:
-            if statement.startswith("<TMPL_") or \
-               statement.startswith("</TMPL_") or \
-               statement.startswith("<!-- TMPL_") or \
-               statement.startswith("<!-- /TMPL_"):
+            if (
+                statement.startswith("<TMPL_")
+                or statement.startswith("</TMPL_")
+                or statement.startswith("<!-- TMPL_")
+                or statement.startswith("<!-- /TMPL_")
+            ):
                 # Processing statement.
                 statement = self.strip_brackets(statement)
                 params = re.split(r"\s+", statement)
@@ -1098,7 +1160,7 @@ class TemplateCompiler:
                 else:
                     tokens.append(statement)
         return tokens
-    
+
     def gettext_tokens(self, tokens, str):
         """ Find gettext strings and return appropriate array of
             processing tokens.
@@ -1108,19 +1170,20 @@ class TemplateCompiler:
         gt_mode = 0
         i = 0
         buf = ""
-        while(1):
-            if i == len(str): break
+        while 1:
+            if i == len(str):
+                break
             if str[i] == "\\":
                 escaped = 0
-                if str[i+1] == "\\":
+                if str[i + 1] == "\\":
                     buf += "\\"
                     i += 2
                     continue
-                elif str[i+1] == "[" or str[i+1] == "]":
+                elif str[i + 1] == "[" or str[i + 1] == "]":
                     escaped = 1
                 else:
                     buf += "\\"
-            elif str[i] == "[" and str[i+1] == "[":
+            elif str[i] == "[" and str[i + 1] == "[":
                 if gt_mode:
                     if escaped:
                         escaped = 0
@@ -1137,7 +1200,7 @@ class TemplateCompiler:
                         gt_mode = 1
                         i += 2
                         continue
-            elif str[i] == "]" and str[i+1] == "]":
+            elif str[i] == "]" and str[i + 1] == "]":
                 if gt_mode:
                     if escaped:
                         escaped = 0
@@ -1159,10 +1222,10 @@ class TemplateCompiler:
                 buf += str[i]
             i += 1
             # end of the loop
-        
+
         if buf:
             tokens.append(buf)
-                
+
     def add_gettext_token(self, tokens, str):
         """ Append a gettext token and gettext string to the tokens array.
             @hidden
@@ -1172,14 +1235,13 @@ class TemplateCompiler:
         tokens.append(str)
         tokens.append(None)
         tokens.append(None)
-    
+
     def strip_brackets(self, statement):
         """ Strip HTML brackets (with optional HTML comments) from the
             beggining and from the end of a statement.
             @hidden
         """
-        if statement.startswith("<!-- TMPL_") or \
-           statement.startswith("<!-- /TMPL_"):
+        if statement.startswith("<!-- TMPL_") or statement.startswith("<!-- /TMPL_"):
             return statement[5:-4]
         else:
             return statement[1:-1]
@@ -1198,7 +1260,7 @@ class TemplateCompiler:
             specified both implicitely or explicitely as a 'NAME' parameter.
             @hidden
         """
-        if len(params) > 0 and '=' not in params[0]:
+        if len(params) > 0 and "=" not in params[0]:
             # implicit identifier
             name = params[0]
             del params[0]
@@ -1215,7 +1277,7 @@ class TemplateCompiler:
         for pair in params:
             name, value = pair.split("=")
             if not name or not value:
-                raise TemplateError, "Syntax error in template."
+                raise TemplateError("Syntax error in template.")
             if name == param:
                 if value[0] == '"':
                     # The value is in double quotes.
@@ -1234,6 +1296,7 @@ class TemplateCompiler:
 #              CLASS: Template               #
 ##############################################
 
+
 class Template:
     """ This class represents a compiled template.
 
@@ -1248,9 +1311,8 @@ class Template:
         The only method which you can directly use is the <em>is_uptodate</em>
         method.
     """
-    
-    def __init__(self, version, file, include_files, tokens, compile_params,
-                 debug=0):
+
+    def __init__(self, version, file, include_files, tokens, compile_params, debug=0):
         """ Constructor.
             @hidden
         """
@@ -1259,27 +1321,26 @@ class Template:
         self._tokens = tokens
         self._compile_params = compile_params
         self._debug = debug
-        self._mtime = None        
+        self._mtime = None
         self._include_mtimes = {}
 
         if not file:
             self.DEB("TEMPLATE WAS COMPILED FROM A STRING")
             return
 
-        # Save modifitcation time of the main template file.           
+        # Save modifitcation time of the main template file.
         if os.path.isfile(file):
             self._mtime = os.path.getmtime(file)
         else:
-            raise TemplateError, "Template: file does not exist: '%s'" % file
+            raise TemplateError("Template: file does not exist: '%s'" % file)
 
         # Save modificaton times of all included template files.
         for inc_file in include_files:
             if os.path.isfile(inc_file):
                 self._include_mtimes[inc_file] = os.path.getmtime(inc_file)
             else:
-                raise TemplateError, "Template: file does not exist: '%s'"\
-                                     % inc_file
-            
+                raise TemplateError("Template: file does not exist: '%s'" % inc_file)
+
         self.DEB("NEW TEMPLATE CREATED")
 
     def is_uptodate(self, compile_params=None):
@@ -1302,7 +1363,7 @@ class Template:
         if not self._file:
             self.DEB("TEMPLATE COMPILED FROM A STRING")
             return 0
-        
+
         if self._version != __version__:
             self.DEB("TEMPLATE: VERSION NOT UPTODATE")
             return 0
@@ -1310,28 +1371,30 @@ class Template:
         if compile_params != None and compile_params != self._compile_params:
             self.DEB("TEMPLATE: DIFFERENT COMPILATION PARAMS")
             return 0
-    
+
         # Check modification times of the main template and all included
         # templates. If the included template no longer exists, then
         # the problem will be resolved when the template is recompiled.
 
         # Main template file.
-        if not (os.path.isfile(self._file) and \
-                self._mtime == os.path.getmtime(self._file)):
+        if not (
+            os.path.isfile(self._file) and self._mtime == os.path.getmtime(self._file)
+        ):
             self.DEB("TEMPLATE: NOT UPTODATE: " + self._file)
-            return 0        
+            return 0
 
         # Included templates.
-        for inc_file in self._include_mtimes.keys():
-            if not (os.path.isfile(inc_file) and \
-                    self._include_mtimes[inc_file] == \
-                    os.path.getmtime(inc_file)):
+        for inc_file in list(self._include_mtimes.keys()):
+            if not (
+                os.path.isfile(inc_file)
+                and self._include_mtimes[inc_file] == os.path.getmtime(inc_file)
+            ):
                 self.DEB("TEMPLATE: NOT UPTODATE: " + inc_file)
                 return 0
         else:
             self.DEB("TEMPLATE: UPTODATE")
-            return 1       
-    
+            return 1
+
     def tokens(self):
         """ Get tokens of this template.
             @hidden
@@ -1371,17 +1434,18 @@ class Template:
         dict["_debug"] = 0
         self.__dict__ = dict
 
-
     def DEB(self, str):
         """ Print debugging message to stderr.
             @hidden
         """
-        if self._debug: print >> sys.stderr, str
+        if self._debug:
+            print(str, file=sys.stderr)
 
 
 ##############################################
 #                EXCEPTIONS                  #
 ##############################################
+
 
 class TemplateError(Exception):
     """ Fatal exception. Raised on runtime or template syntax errors.
@@ -1418,4 +1482,3 @@ class PrecompiledError(Exception):
             @hidden
         """
         Exception.__init__(self, template)
-

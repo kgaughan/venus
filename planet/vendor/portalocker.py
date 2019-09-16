@@ -1,7 +1,7 @@
 # portalocker.py - Cross-platform (posix/nt) API for flock-style file locking.
 #                  Requires python 1.5.2 or better.
 # See http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/65203/index_txt
-# Except where otherwise noted, recipes in the Python Cookbook are 
+# Except where otherwise noted, recipes in the Python Cookbook are
 # published under the Python license.
 
 """Cross-platform (posix/nt) API for flock-style file locking.
@@ -42,52 +42,57 @@ Version: $Id: portalocker.py,v 1.3 2001/05/29 18:47:55 Administrator Exp $
 
 import os
 
-if os.name == 'nt':
-	import win32con
-	import win32file
-	import pywintypes
-	LOCK_EX = win32con.LOCKFILE_EXCLUSIVE_LOCK
-	LOCK_SH = 0 # the default
-	LOCK_NB = win32con.LOCKFILE_FAIL_IMMEDIATELY
-	# is there any reason not to reuse the following structure?
-	__overlapped = pywintypes.OVERLAPPED()
-elif os.name == 'posix':
-	import fcntl
-	LOCK_EX = fcntl.LOCK_EX
-	LOCK_SH = fcntl.LOCK_SH
-	LOCK_NB = fcntl.LOCK_NB
+if os.name == "nt":
+    import win32con
+    import win32file
+    import pywintypes
+
+    LOCK_EX = win32con.LOCKFILE_EXCLUSIVE_LOCK
+    LOCK_SH = 0  # the default
+    LOCK_NB = win32con.LOCKFILE_FAIL_IMMEDIATELY
+    # is there any reason not to reuse the following structure?
+    __overlapped = pywintypes.OVERLAPPED()
+elif os.name == "posix":
+    import fcntl
+
+    LOCK_EX = fcntl.LOCK_EX
+    LOCK_SH = fcntl.LOCK_SH
+    LOCK_NB = fcntl.LOCK_NB
 else:
-	raise RuntimeError("PortaLocker only defined for nt and posix platforms")
+    raise RuntimeError("PortaLocker only defined for nt and posix platforms")
 
-if os.name == 'nt':
-	def lock(file, flags):
-		hfile = win32file._get_osfhandle(file.fileno())
-		win32file.LockFileEx(hfile, flags, 0, -0x10000, __overlapped)
+if os.name == "nt":
 
-	def unlock(file):
-		hfile = win32file._get_osfhandle(file.fileno())
-		win32file.UnlockFileEx(hfile, 0, -0x10000, __overlapped)
+    def lock(file, flags):
+        hfile = win32file._get_osfhandle(file.fileno())
+        win32file.LockFileEx(hfile, flags, 0, -0x10000, __overlapped)
 
-elif os.name =='posix':
-	def lock(file, flags):
-		fcntl.flock(file.fileno(), flags)
+    def unlock(file):
+        hfile = win32file._get_osfhandle(file.fileno())
+        win32file.UnlockFileEx(hfile, 0, -0x10000, __overlapped)
 
-	def unlock(file):
-		fcntl.flock(file.fileno(), fcntl.LOCK_UN)
 
-if __name__ == '__main__':
-	from time import time, strftime, localtime
-	import sys
-	import portalocker
+elif os.name == "posix":
 
-	log = open('log.txt', "a+")
-	portalocker.lock(log, portalocker.LOCK_EX)
+    def lock(file, flags):
+        fcntl.flock(file.fileno(), flags)
 
-	timestamp = strftime("%m/%d/%Y %H:%M:%S\n", localtime(time()))
-	log.write( timestamp )
+    def unlock(file):
+        fcntl.flock(file.fileno(), fcntl.LOCK_UN)
 
-	print "Wrote lines. Hit enter to release lock."
-	dummy = sys.stdin.readline()
 
-	log.close()
+if __name__ == "__main__":
+    from time import time, strftime, localtime
+    import sys
+    import portalocker
 
+    log = open("log.txt", "a+")
+    portalocker.lock(log, portalocker.LOCK_EX)
+
+    timestamp = strftime("%m/%d/%Y %H:%M:%S\n", localtime(time()))
+    log.write(timestamp)
+
+    print("Wrote lines. Hit enter to release lock.")
+    dummy = sys.stdin.readline()
+
+    log.close()

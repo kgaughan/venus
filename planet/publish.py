@@ -1,7 +1,8 @@
 import os, sys
-import urlparse
+import urllib.parse
 import planet
 import pubsubhubbub_publisher as PuSH
+
 
 def publish(config):
     log = planet.logger
@@ -13,8 +14,8 @@ def publish(config):
     if hub and link:
         for root, dirs, files in os.walk(config.output_dir()):
             for file in files:
-                 if file in config.pubsubhubbub_feeds():
-                     feeds.append(urlparse.urljoin(link, file))
+                if file in config.pubsubhubbub_feeds():
+                    feeds.append(urllib.parse.urljoin(link, file))
 
     # publish feeds
     if feeds:
@@ -22,5 +23,5 @@ def publish(config):
             PuSH.publish(hub, feeds)
             for feed in feeds:
                 log.info("Published %s to %s\n" % (feed, hub))
-        except PuSH.PublishError, e:
+        except PuSH.PublishError as e:
             log.error("PubSubHubbub publishing error: %s\n" % e)
