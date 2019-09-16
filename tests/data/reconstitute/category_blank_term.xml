@@ -1,6 +1,6 @@
 <!--
 Description:  category term
-Expect:       not globals().has_key('tags')
+Expect:       'tags' not in globals()
 -->
 
 <feed xmlns="http://www.w3.org/2005/Atom">

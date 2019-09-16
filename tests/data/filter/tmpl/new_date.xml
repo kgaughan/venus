@@ -1,6 +1,6 @@
 <!--
 Description:  source id
-Expect:       Items[0]['new_date'] == 'February 28, 2004' and not Items[1].has_key('new_date') and Items[2]['new_date'] == 'February 27, 2004' and Items[3]['new_date'] == 'February 26, 2004'
+Expect:       Items[0]['new_date'] == 'February 28, 2004' and 'new_date' not in Items[1] and Items[2]['new_date'] == 'February 27, 2004' and Items[3]['new_date'] == 'February 26, 2004'
 -->
 
 <feed xmlns="http://www.w3.org/2005/Atom">
