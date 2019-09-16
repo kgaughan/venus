@@ -86,13 +86,11 @@ if __name__ == "__main__":
     import sys
     import portalocker
 
-    log = open("log.txt", "a+")
-    portalocker.lock(log, portalocker.LOCK_EX)
+    with open("log.txt", "a+") as log:
+        portalocker.lock(log, portalocker.LOCK_EX)
 
-    timestamp = strftime("%m/%d/%Y %H:%M:%S\n", localtime(time()))
-    log.write(timestamp)
+        timestamp = strftime("%m/%d/%Y %H:%M:%S\n", localtime(time()))
+        log.write(timestamp)
 
-    print("Wrote lines. Hit enter to release lock.")
-    dummy = sys.stdin.readline()
-
-    log.close()
+        print("Wrote lines. Hit enter to release lock.")
+        dummy = sys.stdin.readline()

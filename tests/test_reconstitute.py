@@ -15,10 +15,8 @@ class ReconstituteTest(unittest.TestCase):
     def eval(self, name):
         # read the test case
         try:
-            testcase = open(testfiles % name)
-            data = testcase.read()
+            data = open(testfiles % name).read()
             description, expect = self.desc_re.search(data).groups()
-            testcase.close()
         except:
             raise RuntimeError("can't parse %s" % name)
 

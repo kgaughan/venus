@@ -15,10 +15,8 @@ class FilterTmplTest(unittest.TestCase):
     def eval_feed(self, name):
         # read the test case
         try:
-            testcase = open(testfiles % (name, "xml"))
-            data = testcase.read()
+            data = open(testfiles % (name, "xml")).read()
             description, expect = self.desc_feed_re.search(data).groups()
-            testcase.close()
         except:
             raise RuntimeError("can't parse %s" % name)
 
@@ -35,10 +33,8 @@ class FilterTmplTest(unittest.TestCase):
     def eval_config(self, name):
         # read the test case
         try:
-            testcase = open(testfiles % (name, "ini"))
-            data = testcase.read()
+            data = open(testfiles % (name, "ini")).read()
             description, expect = self.desc_config_re.search(data).groups()
-            testcase.close()
         except:
             raise RuntimeError("can't parse %s" % name)
 

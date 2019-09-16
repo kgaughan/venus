@@ -84,10 +84,8 @@ if __name__ == "__main__":
 
     splice.apply(doc.toxml("utf-8"))
 
-    if hide_planet_ns:
-        atom = open(os.path.join(output, "atom.xml")).read()
-    else:
-        atom = open(os.path.join(output, "reconstitute")).read()
+    filename = "atom.xml" if hide_planet_ns else "reconstitute"
+    atom = open(os.path.join(output, filename)).read()
 
     shutil.rmtree(work)
     os.removedirs(os.path.dirname(work))

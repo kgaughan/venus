@@ -51,9 +51,8 @@ def run(script, doc, output_file=None, options={}):
         if hasattr(warnings, "simplefilter"):
             warnings.simplefilter("ignore", RuntimeWarning)
         docfile = os.tmpnam()
-        file = open(docfile, "w")
-        file.write(doc)
-        file.close()
+        with open(docfile, "w") as file:
+            file.write(doc)
 
         cmdopts = []
         for key, value in options.items():

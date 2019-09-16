@@ -33,30 +33,29 @@ def run(script, doc, output_file=None, options={}):
         sys.argv = [plugin_file] + options
 
         # import script
-        handle = open(script, "r")
-        cwd = os.getcwd()
-        try:
+        with open(script, "r") as handle:
+            cwd = os.getcwd()
             try:
                 try:
-                    description = (".plugin", "rb", imp.PY_SOURCE)
-                    imp.load_module("__main__", handle, plugin_file, description)
-                except SystemExit as e:
-                    if e.code:
-                        log.error("%s exit rc=%d", (plugin_file, e.code))
-            except Exception as e:
-                import traceback
+                    try:
+                        description = (".plugin", "rb", imp.PY_SOURCE)
+                        imp.load_module("__main__", handle, plugin_file, description)
+                    except SystemExit as e:
+                        if e.code:
+                            log.error("%s exit rc=%d", (plugin_file, e.code))
+                except Exception as e:
+                    import traceback
 
-                type, value, tb = sys.exc_info()
-                plugin_stderr.write(
-                    "".join(
-                        traceback.format_exception_only(type, value)
-                        + traceback.format_tb(tb)
+                    type, value, tb = sys.exc_info()
+                    plugin_stderr.write(
+                        "".join(
+                            traceback.format_exception_only(type, value)
+                            + traceback.format_tb(tb)
+                        )
                     )
-                )
-        finally:
-            handle.close()
-            if cwd != os.getcwd():
-                os.chdir(cwd)
+            finally:
+                if cwd != os.getcwd():
+                    os.chdir(cwd)
 
     finally:
         # restore system state

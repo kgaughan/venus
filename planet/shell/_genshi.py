@@ -80,9 +80,8 @@ def run(script, doc, output_file=None, options={}):
 
     context = Context(**options)
 
-    tmpl_fileobj = open(script)
-    tmpl = MarkupTemplate(tmpl_fileobj, script, lookup="lenient")
-    tmpl_fileobj.close()
+    with open(script) as tmpl_fileobj:
+        tmpl = MarkupTemplate(tmpl_fileobj, script, lookup="lenient")
 
     if not output_file:
         # filter
@@ -159,8 +158,7 @@ def run(script, doc, output_file=None, options={}):
     output = tmpl.generate(context).render(method)
 
     if output_file:
-        out_file = open(output_file, "w")
-        out_file.write(output.encode("utf-8"))
-        out_file.close()
+        with open(output_file, "w") as out_file:
+            out_file.write(output.encode("utf-8"))
     else:
         return output

@@ -27,32 +27,28 @@ if os.path.exists("tests/data/splice/cache"):
     shutil.rmtree("tests/data/splice/cache")
 shutil.move("tests/work/spider/cache", "tests/data/splice/cache")
 
-source = open("tests/data/spider/config.ini")
-dest1 = open("tests/data/splice/config.ini", "w")
-dest1.write(source.read().replace("/work/spider/", "/data/splice/"))
-dest1.close()
+with open("tests/data/spider/config.ini") as source:
+    with open("tests/data/splice/config.ini", "w") as dest1:
+        dest1.write(source.read().replace("/work/spider/", "/data/splice/"))
 
-source.seek(0)
-dest2 = open("tests/work/apply_config.ini", "w")
-dest2.write(
-    source.read().replace(
-        "[Planet]",
-        """[Planet]
+    source.seek(0)
+    with open("tests/work/apply_config.ini", "w") as dest2:
+        dest2.write(
+            source.read().replace(
+                "[Planet]",
+                """[Planet]
 output_theme = asf
 output_dir = tests/work/apply""",
-    )
-)
-dest2.close()
-source.close()
+            )
+        )
 
 # copy splice output to apply input
 from planet import splice
 
-file = open("tests/data/apply/feed.xml", "w")
 config.load("tests/data/splice/config.ini")
 data = splice.splice().toxml("utf-8")
-file.write(data)
-file.close()
+with open("tests/data/apply/feed.xml", "w") as file:
+    file.write(data)
 
 # copy apply output to config/reading-list input
 config.load("tests/work/apply_config.ini")

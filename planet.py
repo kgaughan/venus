@@ -81,18 +81,17 @@ if __name__ == "__main__":
 
     if debug_splice:
         from planet import logger
+        from lxml import etree
+        from io import StringIO
 
         logger.info("writing debug.atom")
-        debug = open("debug.atom", "w")
-        try:
-            from lxml import etree
-            from io import StringIO
-
-            tree = etree.tostring(etree.parse(StringIO(doc.toxml())))
-            debug.write(etree.tostring(tree, pretty_print=True))
-        except:
-            debug.write(doc.toprettyxml(indent="  ", encoding="utf-8"))
-        debug.close
+        with open("debug.atom", "w") as debug:
+            try:
+                tree = etree.tostring(etree.parse(StringIO(doc.toxml())))
+            except:
+                debug.write(doc.toprettyxml(indent="  ", encoding="utf-8"))
+            else:
+                debug.write(etree.tostring(tree, pretty_print=True))
 
     splice.apply(doc.toxml("utf-8"))
 
@@ -104,4 +103,4 @@ if __name__ == "__main__":
     if expunge:
         from planet import expunge
 
-        expunge.expungeCache
+        expunge.expungeCache()

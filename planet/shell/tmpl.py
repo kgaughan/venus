@@ -283,9 +283,8 @@ def run(script, doc, output_file=None, options={}):
         tp.set("url", urllib.parse.urljoin(config.link(), reluri))
         tp.set("fullurl", urllib.parse.urljoin(config.link(), basename))
 
-        output = open(output_file, "w")
-        output.write(tp.process(template))
-        output.close()
+        with open(output_file, "w") as output:
+            output.write(tp.process(template))
     else:
         return tp.process(template)
 

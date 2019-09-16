@@ -27,9 +27,8 @@ langs = {}
 
 def tri(lang):
     if lang not in langs:
-        f = open("filters/guess-language/%s.data" % lang, "r")
-        t = pickle.load(f)
-        f.close()
+        with open("filters/guess-language/%s.data" % lang, "r") as f:
+            t = pickle.load(f)
         langs[lang] = t
     return langs[lang]
 

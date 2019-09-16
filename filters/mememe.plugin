@@ -58,9 +58,8 @@ feed_links = {}
 
 def check_cache(url):
     try:
-        file = open(filename(meme_cache, url))
-        headers = eval(file.read())
-        file.close()
+        with open(filename(meme_cache, url)) as file:
+            headers = eval(file.read())
         return headers or {}
     except:
         return {}
@@ -70,9 +69,8 @@ def cache_meme(url, headers):
     json = []
     for key, value in headers.items():
         json.append("  %s: %s" % (toj(key), toj(value)))
-    file = open(filename(meme_cache, url), "w")
-    file.write("{\n" + ",\n".join(json) + "\n}\n")
-    file.close()
+    with open(filename(meme_cache, url), "w") as file:
+        file.write("{\n" + ",\n".join(json) + "\n}\n")
 
 
 urlmap = {}
@@ -574,8 +572,7 @@ if memes_ul.lsCountNode() < 1:
     memes_ul.unlinkNode()
 
 log.info("Writing " + MEMES_ATOM)
-output = open(MEMES_ATOM, "w")
-output.write(feed_doc.serialize("utf-8"))
-output.close()
+with open(MEMES_ATOM, "w") as output:
+    output.write(feed_doc.serialize("utf-8"))
 
 sys.stdout.write(doc.serialize("utf-8"))

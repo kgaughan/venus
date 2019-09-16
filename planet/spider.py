@@ -61,9 +61,8 @@ def filename(directory, filename):
 
 def write(xdoc, out, mtime=None):
     """ write the document out to disk """
-    file = open(out, "w")
-    file.write(xdoc)
-    file.close()
+    with open(out, "w") as file:
+        file.write(xdoc)
     if mtime:
         os.utime(out, (mtime, mtime))
 

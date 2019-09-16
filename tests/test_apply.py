@@ -34,8 +34,8 @@ class ApplyTest(unittest.TestCase):
             self.assertTrue(os.stat(path).st_size > 0, file + " has size 0")
 
         # verify that index.html is well formed, has content, and xml:lang
-        html = open(os.path.join(workdir, "index.html"))
-        doc = minidom.parse(html)
+        with open(os.path.join(workdir, "index.html")) as html:
+            doc = minidom.parse(html)
         list = []
         content = lang = 0
         for div in doc.getElementsByTagName("div"):
@@ -44,7 +44,6 @@ class ApplyTest(unittest.TestCase):
             content += 1
             if div.getAttribute("xml:lang") == "en-us":
                 lang += 1
-        html.close()
         self.assertEqual(12, content)
         self.assertEqual(3, lang)
 

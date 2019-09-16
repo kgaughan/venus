@@ -20,9 +20,7 @@ class DjangoFilterTests(unittest.TestCase):
 
     def test_django_entry_title(self):
         config.load("tests/data/filter/django/test.ini")
-        feed = open("tests/data/filter/django/test.xml")
-        input = feed.read()
-        feed.close()
+        input = open("tests/data/filter/django/test.xml").read()
         results = dj.run(
             os.path.realpath("tests/data/filter/django/title.html.dj"), input
         )
@@ -33,9 +31,7 @@ class DjangoFilterTests(unittest.TestCase):
     def test_django_entry_title_autoescape_off(self):
         config.load("tests/data/filter/django/test.ini")
         config.parser.set("Planet", "django_autoescape", "off")
-        feed = open("tests/data/filter/django/test.xml")
-        input = feed.read()
-        feed.close()
+        input = open("tests/data/filter/django/test.xml").read()
         results = dj.run(
             os.path.realpath("tests/data/filter/django/title.html.dj"), input
         )
@@ -43,9 +39,7 @@ class DjangoFilterTests(unittest.TestCase):
 
     def test_django_config_context(self):
         config.load("tests/data/filter/django/test.ini")
-        feed = open("tests/data/filter/django/test.xml")
-        input = feed.read()
-        feed.close()
+        input = open("tests/data/filter/django/test.xml").read()
         results = dj.run(
             os.path.realpath("tests/data/filter/django/config.html.dj"), input
         )

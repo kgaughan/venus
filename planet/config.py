@@ -298,9 +298,8 @@ def downloadReadingList(list, orig_config, callback, use_cache=True, re_read=Tru
 
         # write to cache
         if use_cache:
-            cache = open(cache_filename, "w")
-            cached_config.write(cache)
-            cache.close()
+            with open(cache_filename, "w") as cache:
+                cached_config.write(cache)
 
         # re-parse and proceed
         logger.debug("Using %s readinglist", list)

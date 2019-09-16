@@ -43,12 +43,11 @@ def run(script, doc, output_file=None, options={}):
     if output_file:
         reluri = os.path.splitext(os.path.basename(output_file))[0]
         context["url"] = urllib.parse.urljoin(config.link(), reluri)
-        f = open(output_file, "w")
         ss = t.render(context)
         if isinstance(ss, str):
             ss = ss.encode("utf-8")
-        f.write(ss)
-        f.close()
+        with open(output_file, "w") as f:
+            f.write(ss)
     else:
         # @@this is useful for testing purposes, but does it
         # belong here?

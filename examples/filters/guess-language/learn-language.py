@@ -17,9 +17,8 @@ from pickle import dump
 
 def main():
     tri = Trigram(argv[1])
-    out = open(argv[2], "w")
-    dump(tri, out)
-    out.close()
+    with open(argv[2], "w") as out:
+        dump(tri, out)
 
 
 if __name__ == "__main__":

@@ -179,9 +179,8 @@ def apply(doc):
                     if tee:
                         output_dir = planet.config.output_dir()
                         dest_file = os.path.join(output_dir, dest.strip())
-                        dest_file = open(dest_file, "w")
-                        dest_file.write(tee)
-                        dest_file.close()
+                        with open(dest_file, "w") as dest_file:
+                            dest_file.write(tee)
                 else:
                     # pipe'd output
                     output = shell.run(filter, output, mode="filter")
@@ -189,9 +188,8 @@ def apply(doc):
                         os.unlink(output_file)
                         break
             else:
-                handle = open(output_file, "w")
-                handle.write(output)
-                handle.close()
+                with open(output_file, "w") as handle:
+                    handle.write(output)
 
     # Process bill of materials
     for copy_file in config.bill_of_materials():
