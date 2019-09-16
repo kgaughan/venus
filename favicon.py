@@ -81,7 +81,7 @@ else:
 
 # produce config file
 config = ConfigParser()
-for sub, icon in list(icons.items()):
+for sub, icon in icons.items():
     config.add_section(sub)
     config.set(sub, "favicon", icon)
 config.write(sys.stdout)

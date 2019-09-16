@@ -71,7 +71,7 @@ class idIndexTest(unittest.TestCase):
             index["planet.intertwingly.net,2006,testfeed3,1"],
         )
 
-        for key in list(index.keys()):
+        for key in index:
             value = index[key]
             if value.find("testfeed2") > 0:
                 index[key] = value.swapcase()

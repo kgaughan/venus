@@ -91,7 +91,7 @@ def foaf2config(rdf, config, subject=None, section=None):
                 config.set(feed, "name", str(title))
 
         # now look for OnlineAccounts for the same person
-        if list(accounts.keys()):
+        if accounts:
             for statement in model.find_statements(
                 Statement(person, foaf.holdsAccount, None)
             ):
@@ -177,7 +177,7 @@ def copy_options(config, parent_section, child_section, overrides={}):
         if option not in overrides:
             config.set(child_section, option, config.get(parent_section, option))
 
-    for option, value in list(overrides.items()):
+    for option, value in overrides.items():
         config.set(child_section, option, value)
 
 

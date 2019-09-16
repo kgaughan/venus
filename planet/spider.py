@@ -158,7 +158,7 @@ def writeCache(feed_uri, feed_info, data):
     # capture feed and data from the planet configuration file
     if data.get("version"):
         if "links" not in data.feed:
-            data.feed["links"] = list()
+            data.feed["links"] = []
         feedtype = "application/atom+xml"
         if data.version.startswith("rss"):
             feedtype = "application/rss+xml"
@@ -174,7 +174,7 @@ def writeCache(feed_uri, feed_info, data):
                     {"rel": "self", "type": feedtype, "href": feed_uri}
                 )
             )
-    for name, value in list(config.feed_options(feed_uri).items()):
+    for name, value in config.feed_options(feed_uri).items():
         data.feed["planet_" + name] = value
 
     # perform user configured scrub operations on the data
@@ -193,7 +193,7 @@ def writeCache(feed_uri, feed_info, data):
         if "id" not in entry or not entry.id:
             entry["id"] = reconstitute.id(None, entry)
         elif hasattr(entry["id"], "values"):
-            entry["id"] = list(entry["id"].values())[0]
+            entry["id"] = next(entry["id"].values())
         if not entry["id"]:
             continue
 
@@ -210,7 +210,7 @@ def writeCache(feed_uri, feed_info, data):
 
     # write each entry to the cache
     cache = config.cache_directory()
-    for updated, entry in list(ids.values()):
+    for updated, entry in ids.values():
 
         # compute blacklist file name based on the id
         blacklist_file = filename(blacklist, entry.id)
@@ -461,7 +461,7 @@ def spiderPlanet(only_if_new=False):
             parse_queue.put(item=(uri, feed_info, uri))
 
     # Mark the end of the fetch queue
-    for thread in list(threads.keys()):
+    for thread in threads:
         fetch_queue.put(item=(None, None))
 
     # Process the results as they arrive
@@ -542,7 +542,7 @@ def spiderPlanet(only_if_new=False):
 
         time.sleep(0.1)
 
-        for index in list(threads.keys()):
+        for index in threads:
             if not threads[index].isAlive():
                 del threads[index]
                 if not threads:

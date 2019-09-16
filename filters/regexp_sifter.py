@@ -1,7 +1,7 @@
 import sys, re
 
 # parse options
-options = dict(list(zip(sys.argv[1::2], sys.argv[2::2])))
+options = dict(zip(sys.argv[1::2], sys.argv[2::2]))
 
 # read entry
 doc = data = sys.stdin.read()

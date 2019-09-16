@@ -163,7 +163,7 @@ def tmpl_mapper(source, rules):
                 node = node[path]
             elif isinstance(path, dict):
                 for test in node:
-                    for key, value in list(path.items()):
+                    for key, value in path.items():
                         if test.get(key, None) != value:
                             break
                     else:
@@ -178,7 +178,7 @@ def tmpl_mapper(source, rules):
                 output[rule[0]] = rule[1](node)
 
     # copy over all planet namespaced elements from parent source
-    for name, value in list(source.items()):
+    for name, value in source.items():
         if name.startswith("planet_"):
             output[name[7:]] = String(value)
         if not output.get("name") and "title_detail" in source:
@@ -186,7 +186,7 @@ def tmpl_mapper(source, rules):
 
     # copy over all planet namespaced elements from child source element
     if "source" in source:
-        for name, value in list(source.source.items()):
+        for name, value in source.source.items():
             if name.startswith("planet_"):
                 output["channel_" + name[7:]] = String(value)
             if not output.get("channel_name") and "title_detail" in source.source:
@@ -274,7 +274,7 @@ def run(script, doc, output_file=None, options={}):
     manager = htmltmpl.TemplateManager()
     template = manager.prepare(script)
     tp = htmltmpl.TemplateProcessor(html_escape=0)
-    for key, value in list(template_info(doc).items()):
+    for key, value in template_info(doc).items():
         tp.set(key, value)
 
     if output_file:

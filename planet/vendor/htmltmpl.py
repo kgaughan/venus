@@ -1,12 +1,12 @@
 """ A templating engine for separation of code and HTML.
 
     The documentation of this templating engine is separated to two parts:
-    
+
         1. Description of the templating language.
-           
+
         2. Documentation of classes and API of this module that provides
            a Python implementation of the templating language.
-    
+
     All the documentation can be found in 'doc' directory of the
     distribution tarball or at the homepage of the engine.
     Latest versions of this module are also available at that website.
@@ -64,38 +64,38 @@ PARAM_GETTEXT_STRING = 1
 
 class TemplateManager:
     """  Class that manages compilation and precompilation of templates.
-    
+
          You should use this class whenever you work with templates
          that are stored in a file. The class can create a compiled
          template and transparently manage its precompilation. It also
          keeps the precompiled templates up-to-date by modification times
-         comparisons. 
+         comparisons.
     """
 
     def __init__(
         self, include=1, max_include=5, precompile=1, comments=1, gettext=0, debug=0
     ):
         """ Constructor.
-        
+
             @header
             __init__(include=1, max_include=5, precompile=1, comments=1,
                      gettext=0, debug=0)
-            
+
             @param include Enable or disable included templates.
             This optional parameter can be used to enable or disable
             <em>TMPL_INCLUDE</em> inclusion of templates. Disabling of
             inclusion can improve performance a bit. The inclusion is
             enabled by default.
-      
+
             @param max_include Maximum depth of nested inclusions.
             This optional parameter can be used to specify maximum depth of
             nested <em>TMPL_INCLUDE</em> inclusions. It defaults to 5.
             This setting prevents infinite recursive inclusions.
-            
+
             @param precompile Enable or disable precompilation of templates.
             This optional parameter can be used to enable or disable
             creation and usage of precompiled templates.
-      
+
             A precompiled template is saved to the same directory in
             which the main template file is located. You need write
             permissions to that directory.
@@ -104,7 +104,7 @@ class TemplateManager:
             it's not necessary to parse the templates over and over again.
             The boost is especially noticeable when templates that include
             other templates are used.
-            
+
             Comparison of modification times of the main template and all
             included templates is used to ensure that the precompiled
             templates are up-to-date. Templates are also recompiled if the
@@ -112,13 +112,13 @@ class TemplateManager:
 
             The <em>TemplateError</em>exception is raised when the precompiled
             template cannot be saved. Precompilation is enabled by default.
-            
+
             @param comments Enable or disable template comments.
             This optional parameter can be used to enable or disable
             template comments.
             Disabling of the comments can improve performance a bit.
             Comments are enabled by default.
-            
+
             @param gettext Enable or disable gettext support.
 
             @param debug Enable or disable debugging messages.
@@ -139,7 +139,7 @@ class TemplateManager:
 
     def prepare(self, file):
         """ Preprocess, parse, tokenize and compile the template.
-            
+
             If precompilation is enabled then this method tries to load
             a precompiled form of the template from the same directory
             in which the template source file is located. If it succeeds,
@@ -149,21 +149,21 @@ class TemplateManager:
             <em>TMPL_INCLUDE</em> statements. If any of the modification times
             differs, then the template is recompiled and the precompiled
             form updated.
-            
+
             If precompilation is disabled, then this method parses and
             compiles the template.
-            
+
             @header prepare(file)
-            
+
             @return Compiled template.
             The methods returns an instance of the <em>Template</em> class
             which is a compiled form of the template. This instance can be
             used as input for the <em>TemplateProcessor</em>.
-            
+
             @param file Path to the template file to prepare.
             The method looks for the template file in current directory
             if the parameter is a relative path. All included templates must
-            be placed in subdirectory <strong>'inc'</strong> of the 
+            be placed in subdirectory <strong>'inc'</strong> of the
             directory in which the main template file is located.
         """
         compiled = None
@@ -203,16 +203,16 @@ class TemplateManager:
 
     def update(self, template):
         """ Update (recompile) a compiled template.
-        
+
             This method recompiles a template compiled from a file.
             If precompilation is enabled then the precompiled form saved on
             disk is also updated.
-            
+
             @header update(template)
-            
+
             @return Recompiled template.
             It's ensured that the returned template is up-to-date.
-            
+
             @param template A compiled template.
             This parameter should be an instance of the <em>Template</em>
             class, created either by the <em>TemplateManager</em> or by the
@@ -230,7 +230,7 @@ class TemplateManager:
     ##############################################
 
     def DEB(self, str):
-        """ Print debugging message to stderr if debugging is enabled. 
+        """ Print debugging message to stderr if debugging is enabled.
             @hidden
         """
         if self._debug:
@@ -261,7 +261,7 @@ class TemplateManager:
 
             Remove the precompiled template file and recompile it
             if the file contains corrupted or unpicklable data.
-            
+
             @hidden
         """
         filename = file + "c"  # "template.tmplc"
@@ -297,15 +297,15 @@ class TemplateManager:
 
     def save_precompiled(self, template):
         """ Save compiled template to disk in precompiled form.
-            
+
             Associated metadata is also saved. It includes: filename of the
             main template file, modification time of the main template file,
             modification times of all included templates and version of the
             htmltmpl module which compiled the template.
-            
+
             The method removes a file which is saved only partially because
             of some error.
-            
+
             @hidden
         """
         filename = template.file() + "c"  # creates "template.tmplc"
@@ -377,10 +377,10 @@ class TemplateProcessor:
             @param html_escape Enable or disable HTML escaping of variables.
             This optional parameter is a flag that can be used to enable or
             disable automatic HTML escaping of variables.
-            All variables are by default automatically HTML escaped. 
+            All variables are by default automatically HTML escaped.
             The escaping process substitutes HTML brackets, ampersands and
             double quotes with appropriate HTML entities.
-            
+
             @param magic_vars Enable or disable loop magic variables.
             This parameter can be used to enable or disable
             "magic" context variables, that are automatically defined inside
@@ -388,7 +388,7 @@ class TemplateProcessor:
 
             Refer to the language specification for description of these
             magic variables.
-      
+
             @param global_vars Globally activate global lookup of variables.
             This optional parameter is a flag that can be used to specify
             whether variables which cannot be found in the current scope
@@ -433,13 +433,13 @@ class TemplateProcessor:
             in the loop block. The number of mappings contained in this list
             is equal to number of times the loop block is repeated in the
             output.
-      
+
             @header set(var, value)
             @return No return value.
 
             @param var Name of template variable or loop.
             @param value The value to associate.
-            
+
         """
         # The correctness of character case is verified only for top-level
         # variables.
@@ -747,11 +747,11 @@ class TemplateProcessor:
             located in currently processed pass of a loop which
             is currently being processed. If the variable is an ordinary
             variable, then return it.
-            
-            If the variable is an identificator of a loop, then 
+
+            If the variable is an identificator of a loop, then
             return the total number of times this loop will
             be executed.
-            
+
             Return an empty string, if the variable is not
             found at all.
 
@@ -990,7 +990,7 @@ class TemplateCompiler:
             The return value is an instance of the <em>Template</em>
             class.
 
-            @param data String containing the template data.        
+            @param data String containing the template data.
         """
         self.DEB("COMPILING FROM STRING")
         self._include = 0
@@ -1384,7 +1384,7 @@ class Template:
             return 0
 
         # Included templates.
-        for inc_file in list(self._include_mtimes.keys()):
+        for inc_file in self._include_mtimes:
             if not (
                 os.path.isfile(inc_file)
                 and self._include_mtimes[inc_file] == os.path.getmtime(inc_file)
@@ -1461,8 +1461,8 @@ class TemplateError(Exception):
 
         The exception can be raised by constructors or by any method of any
         class.
-        
-        The instance is no longer usable when this exception is raised. 
+
+        The instance is no longer usable when this exception is raised.
     """
 
     def __init__(self, error):

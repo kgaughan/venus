@@ -98,8 +98,8 @@ class Trigram:
         """calculates the scalar length of the trigram vector and
         stores it in self.length."""
         total = 0
-        for y in list(self.lut.values()):
-            total += sum([x * x for x in list(y.values())])
+        for y in self.lut.values():
+            total += sum(x * x for x in y.values())
         self.length = total ** 0.5
 
     def similarity(self, other):
@@ -112,7 +112,7 @@ class Trigram:
         lut1 = self.lut
         lut2 = other.lut
         total = 0
-        for k in list(lut1.keys()):
+        for k in lut1:
             if k in lut2:
                 a = lut1[k]
                 b = lut2[k]
@@ -146,7 +146,7 @@ class Trigram:
             return " "
         # if you were using this a lot, caching would a good idea.
         letters = []
-        for k, v in list(self.lut[k].items()):
+        for k, v in self.lut[k].items():
             letters.append(k * v)
         letters = "".join(letters)
         return random.choice(letters)

@@ -15,7 +15,7 @@ def csv2config(input, config=None):
         section = row[reader.fieldnames[0]]
         if not config.has_section(section):
             config.add_section(section)
-        for name, value in list(row.items()):
+        for name, value in row.items():
             if value and name != reader.fieldnames[0]:
                 config.set(section, name, value)
 

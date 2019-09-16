@@ -1,7 +1,7 @@
 import sys, libxml2
 
 # parse options
-options = dict(list(zip(sys.argv[1::2], sys.argv[2::2])))
+options = dict(zip(sys.argv[1::2], sys.argv[2::2]))
 
 # parse entry
 doc = libxml2.parseDoc(sys.stdin.read())

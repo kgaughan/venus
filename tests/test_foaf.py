@@ -17,26 +17,26 @@ test_foaf_document = """
   xmlns:rss="http://purl.org/rss/1.0/"
   xmlns:dc="http://purl.org/dc/elements/1.1/">
 
-<foaf:Agent rdf:nodeID="id2245354"> 
-<foaf:name>Danny Ayers</foaf:name> 
-<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/> 
-<foaf:weblog> 
-<foaf:Document rdf:about="http://dannyayers.com/"> 
-<dc:title>Raw Blog by Danny Ayers</dc:title> 
-<rdfs:seeAlso> 
-<rss:channel rdf:about="http://dannyayers.com/feed/rdf"> 
-<foaf:maker rdf:nodeID="id2245354"/> 
-<foaf:topic rdf:resource="http://www.w3.org/2001/sw/"/> 
-<foaf:topic rdf:resource="http://www.w3.org/RDF/"/> 
-</rss:channel> 
-</rdfs:seeAlso> 
-</foaf:Document> 
-</foaf:weblog> 
-<foaf:interest rdf:resource="http://www.w3.org/2001/sw/"/> 
-<foaf:interest rdf:resource="http://www.w3.org/RDF/"/> 
-</foaf:Agent> 
+<foaf:Agent rdf:nodeID="id2245354">
+<foaf:name>Danny Ayers</foaf:name>
+<rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+<foaf:weblog>
+<foaf:Document rdf:about="http://dannyayers.com/">
+<dc:title>Raw Blog by Danny Ayers</dc:title>
+<rdfs:seeAlso>
+<rss:channel rdf:about="http://dannyayers.com/feed/rdf">
+<foaf:maker rdf:nodeID="id2245354"/>
+<foaf:topic rdf:resource="http://www.w3.org/2001/sw/"/>
+<foaf:topic rdf:resource="http://www.w3.org/RDF/"/>
+</rss:channel>
+</rdfs:seeAlso>
+</foaf:Document>
+</foaf:weblog>
+<foaf:interest rdf:resource="http://www.w3.org/2001/sw/"/>
+<foaf:interest rdf:resource="http://www.w3.org/RDF/"/>
+</foaf:Agent>
 
-</rdf:RDF> 
+</rdf:RDF>
 """.strip()
 
 
@@ -137,7 +137,7 @@ try:
     import RDF
 except:
     logger.warn("Redland RDF is not available => can't test FOAF reading lists")
-    for key in list(FoafTest.__dict__.keys()):
+    for key in FoafTest.__dict__:
         if key.startswith("test_"):
             delattr(FoafTest, key)
 

@@ -13,7 +13,7 @@ feed_types = ["application/atom+xml", "application/rss+xml", "application/rdf+xm
 def norm(value):
     """ Convert to Unicode """
     if hasattr(value, "items"):
-        return dict([(norm(n), norm(v)) for n, v in list(value.items())])
+        return dict((norm(n), norm(v)) for n, v in value.items())
 
     try:
         return value.decode("utf-8")
@@ -136,7 +136,7 @@ def run(script, doc, output_file=None, options={}):
                 last_feed = None
 
             # add streams for all text constructs
-            for key in list(entry.keys()):
+            for key in entry:
                 if (
                     key.endswith("_detail")
                     and "type" in entry[key]

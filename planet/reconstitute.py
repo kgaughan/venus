@@ -78,7 +78,7 @@ def id(xentry, entry):
     if "id" in entry and entry.id:
         entry_id = entry.id
         if hasattr(entry_id, "values"):
-            entry_id = list(entry_id.values())[0]
+            entry_id = next(entry_id.values())
     elif "link" in entry and entry.link:
         entry_id = entry.link
     elif "title" in entry and entry.title:
@@ -104,7 +104,7 @@ def links(xentry, entry):
             entry["links"].append({"rel": "alternate", "href": entry.link})
     xdoc = xentry.ownerDocument
     for link in entry["links"]:
-        if not "href" in list(link.keys()):
+        if not "href" in link:
             continue
         xlink = xdoc.createElement("link")
         xlink.setAttribute("href", link.get("href"))
@@ -279,7 +279,7 @@ def source(xsource, source, bozo, format):
     # propagate planet inserted information
     if "planet_name" in source and "planet_css-id" not in source:
         source["planet_css-id"] = cssid(source["planet_name"])
-    for key, value in list(source.items()):
+    for key, value in source.items():
         if key.startswith("planet_"):
             createTextElement(xsource, key.replace("_", ":", 1), value)
 
@@ -380,7 +380,7 @@ def reconstitute(feed, entry):
     # merge in planet:* from feed (or simply use the feed if no source)
     src = entry.get("source")
     if src:
-        for name, value in list(feed.feed.items()):
+        for name, value in feed.feed.items():
             if name.startswith("planet_"):
                 src[name] = value
         if "id" in feed.feed:

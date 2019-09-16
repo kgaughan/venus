@@ -52,7 +52,7 @@ class OpmlParser(ContentHandler, SGMLParser):
         if "type" in attrs:
             if attrs["type"] == "link" and "url" not in attrs:
                 # Auto-correct WordPress link manager OPML files
-                attrs = dict(list(attrs.items()))
+                attrs = dict(attrs.items())
                 attrs["type"] = "rss"
             if attrs["type"].lower() not in ["rss", "atom"]:
                 return
@@ -61,9 +61,9 @@ class OpmlParser(ContentHandler, SGMLParser):
         # (note the camel casing), but this has proven to be problematic,
         # with the most common misspelling being in all lower-case
         if "xmlUrl" not in attrs or not attrs["xmlUrl"].strip():
-            for attribute in list(attrs.keys()):
+            for attribute in attrs:
                 if attribute.lower() == "xmlurl" and attrs[attribute].strip():
-                    attrs = dict(list(attrs.items()))
+                    attrs = dict(attrs.items())
                     attrs["xmlUrl"] = attrs[attribute]
                     break
             else:
@@ -74,7 +74,7 @@ class OpmlParser(ContentHandler, SGMLParser):
         if "text" not in attrs or not attrs["text"].strip():
             if "title" not in attrs or not attrs["title"].strip():
                 return
-            attrs = dict(list(attrs.items()))
+            attrs = dict(attrs.items())
             attrs["text"] = attrs["title"]
 
         # if we get this far, we either have a valid subscription list entry,
@@ -90,7 +90,7 @@ class OpmlParser(ContentHandler, SGMLParser):
 
         for i in range(1, len(parsed), 2):
 
-            if parsed[i] in list(entitydefs.keys()):
+            if parsed[i] in entitydefs:
                 # named entities
                 codepoint = entitydefs[parsed[i]]
                 match = self.entities.match(codepoint)

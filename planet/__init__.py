@@ -4,6 +4,7 @@ logger = None
 loggerParms = None
 
 import os, sys, re
+import logging
 from . import config
 
 config.__init__()
@@ -18,14 +19,7 @@ def getLogger(level, format):
     if logger and loggerParms == (level, format):
         return logger
 
-    try:
-        import logging
-
-        logging.basicConfig(format=format)
-    except:
-        import compat_logging as logging
-
-        logging.basicConfig(format=format)
+    logging.basicConfig(format=format)
 
     logger = logging.getLogger("planet.runner")
     logger.setLevel(logging.getLevelName(level))

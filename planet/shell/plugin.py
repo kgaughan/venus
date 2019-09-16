@@ -29,7 +29,7 @@ def run(script, doc, output_file=None, options={}):
             plugin_file = script
 
         # set sys.argv
-        options = sum([["--" + key, value] for key, value in list(options.items())], [])
+        options = sum((["--" + key, value] for key, value in options.items()), [])
         sys.argv = [plugin_file] + options
 
         # import script

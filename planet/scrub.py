@@ -27,7 +27,7 @@ def scrub(feed_uri, data):
                 del entry[tag + "_detail"]
             if tag + "_parsed" in entry:
                 del entry[tag + "_parsed"]
-            for key in list(entry.keys()):
+            for key in entry:
                 if not key.endswith("_detail"):
                     continue
                 for detail in entry[key].copy():
@@ -116,7 +116,7 @@ def scrub(feed_uri, data):
 
     # resolve relative URIs and sanitize
     for entry in data.entries + [data.feed]:
-        for key in list(entry.keys()):
+        for key in entry:
             if key == "content" and "content_detail" not in entry:
                 node = entry.content[0]
             elif key.endswith("_detail"):

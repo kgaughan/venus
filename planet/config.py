@@ -268,7 +268,7 @@ def downloadReadingList(list, orig_config, callback, use_cache=True, re_read=Tru
 
         cached_config = ConfigParser()
         cached_config.add_section(list)
-        for key, value in list(options.items()):
+        for key, value in options.items():
             cached_config.set(list, key, value)
 
         # read list
@@ -411,9 +411,9 @@ def filters(section=None):
     filters = []
     if parser.has_option("Planet", "filters"):
         filters += parser.get("Planet", "filters").split()
-    if list(filter(section)):
+    if any(filter(section)):
         filters.append(
-            "regexp_sifter.py?require=" + urllib.parse.quote(list(filter(section)))
+            "regexp_sifter.py?require=" + urllib.parse.quote(filter(section))
         )
     if exclude(section):
         filters.append(
@@ -442,7 +442,7 @@ def feed_options(section):
     options = dict(
         [
             (key, value)
-            for key, value in list(planet_options().items())
+            for key, value in planet_options().items()
             if key not in planet_predefined_options
         ]
     )

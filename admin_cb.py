@@ -74,7 +74,7 @@ elif form["command"].value == "blacklist":
 
     # find list of urls, in the form bl[n]=url
 
-    for key in list(form.keys()):
+    for key in form:
 
         if not key.startswith("bl"):
             continue
@@ -98,7 +98,7 @@ elif form["command"].value == "blacklist":
 
         print(
             """
-<p>Note that blacklisting does not automatically 
+<p>Note that blacklisting does not automatically
 refresh the planet. You will need to either wait for
 a scheduled planet run, or refresh manually from the admin interface.</p>
 """
