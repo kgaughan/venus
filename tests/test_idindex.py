@@ -84,12 +84,3 @@ class idIndexTest(unittest.TestCase):
         self.assertEqual(8, len(doc.getElementsByTagName("entry")))
         self.assertEqual(4, len(doc.getElementsByTagName("planet:source")))
         self.assertEqual(12, len(doc.getElementsByTagName("planet:name")))
-
-
-try:
-    module = "dbhash"
-except ImportError:
-    planet.logger.warn("dbhash is not available => can't test id index")
-    for method in dir(idIndexTest):
-        if method.startswith("test_"):
-            delattr(idIndexTest, method)

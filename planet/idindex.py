@@ -1,5 +1,6 @@
 from glob import glob
-import os, sys
+import os, sys, shutil
+import dbm
 
 if __name__ == "__main__":
     rootdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -15,9 +16,8 @@ def open():
         index = os.path.join(cache, "index")
         if not os.path.exists(index):
             return None
-        import dbm.bsd
 
-        return dbm.bsd.open(filename(index, "id"), "w")
+        return dbm.open(filename(index, "id"), "w")
     except Exception as e:
         if e.__class__.__name__ == "DBError":
             e = e.args[-1]
@@ -36,7 +36,7 @@ def destroy():
     idindex = filename(index, "id")
     if os.path.exists(idindex):
         os.unlink(idindex)
-    os.removedirs(index)
+    shutil.rmtree(index)
     log.info(idindex + " deleted")
 
 
@@ -47,9 +47,8 @@ def create():
     index = os.path.join(cache, "index")
     if not os.path.exists(index):
         os.makedirs(index)
-    import dbm.bsd
 
-    index = dbm.bsd.open(filename(index, "id"), "c")
+    index = dbm.open(filename(index, "id"), "c")
 
     try:
         import libxml2
